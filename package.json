@@ -1,0 +1,26 @@
+{
+  "name": "orbit-protocol",
+  "version": "0.1.0",
+  "description": "Decentralized Rotating Savings & Credit Associations (ROSCAs) with Soulbound Reputation on NEAR Protocol",
+  "private": true,
+  "scripts": {
+    "build:contract": "npm --prefix contracts run build",
+    "test:contract": "npm --prefix contracts run test",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "near",
+    "blockchain",
+    "rosca",
+    "ajo",
+    "tandas",
+    "susu",
+    "defi",
+    "social-money",
+    "real-world-money",
+    "soulbound-nft"
+  ],
+  "author": "NEAR Hackathon Team",
+  "license": "MIT"
+}

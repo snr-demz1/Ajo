@@ -1,0 +1,16 @@
+{
+  "name": "orbit-protocol-contracts",
+  "version": "0.1.0",
+  "description": "Smart contracts for Orbit: Rotating Savings Circles with Soulbound Reputation Passes",
+  "main": "build/orbit_contract.wasm",
+  "scripts": {
+    "build": "near-sdk-js build src/index.ts build/orbit_contract.wasm",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "near-sdk-js": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
