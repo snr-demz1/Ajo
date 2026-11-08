@@ -1,17 +1,17 @@
 export type AccountId = string;
 
 export enum CircleStatus {
-  Pending = "Pending",
-  Active = "Active",
-  Completed = "Completed",
-  Terminated = "Terminated"
+  Pending = "Pending",       // Waiting for members to join
+  Active = "Active",         // Rounds in progress
+  Completed = "Completed",   // All rounds successfully finished
+  Terminated = "Terminated"  // Failed due to unresolved default; remaining funds refunded
 }
 
 export enum ReputationTier {
-  Bronze = "Bronze",
-  Silver = "Silver",
-  Gold = "Gold",
-  Platinum = "Platinum"
+  Bronze = "Bronze",         // 0 - 549
+  Silver = "Silver",         // 550 - 699
+  Gold = "Gold",             // 700 - 849
+  Platinum = "Platinum"      // 850 - 1000
 }
 
 export interface ReputationProfile {
@@ -19,24 +19,28 @@ export interface ReputationProfile {
   circles_completed: number;
   on_time_payments: number;
   missed_payments: number;
-  reputation_score: number; // 0 to 1000
+  reputation_score: number;  // 0 to 1000
   tier: ReputationTier;
-  badge_minted: boolean;
+  collateral_slashed_total: string;
 }
 
 export interface Circle {
   id: string;
   name: string;
   creator: AccountId;
-  contribution_amount: string; // in yoctoNEAR (or FT token units)
-  round_duration_ms: number;
+  contribution_amount: string;     // Exact amount per round in yoctoNEAR
+  collateral_per_member: string;   // Required collateral stake held in escrow (1 round's amount)
+  round_duration_ms: number;       // Duration of each round in milliseconds
   total_members: number;
   members: AccountId[];
-  payout_order: AccountId[];
-  current_round: number;
-  round_start_time: number; // timestamp in ms
+  payout_order: AccountId[];       // Ordered by reputation score (highest score = earliest payout)
+  current_round: number;           // 1 to total_members
+  round_start_time: number;        // Timestamp in ms
+  round_deadline: number;          // Timestamp in ms (start + duration)
   status: CircleStatus;
-  total_pot: string;
+  total_pot: string;               // Current round's accumulated pot
   round_paid_members: Record<number, AccountId[]>;
   payout_claimed: Record<number, boolean>;
+  member_collateral: Record<AccountId, string>; // Held collateral per member
+  defaulted_members: AccountId[];
 }

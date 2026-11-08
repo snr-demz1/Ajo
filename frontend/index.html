@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Orbit | Your Community Savings & Credit</title>
+  <title>Orbit Protocol | Trustless Savings Circles & Credit on NEAR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +32,7 @@
       inset: 0;
       border-radius: inherit;
       background: radial-gradient(circle at 80% 20%, rgba(0, 236, 151, 0.25) 0%, transparent 60%);
-      pointer-events-none;
+      pointer-events: none;
     }
 
     .glass-surface {
@@ -57,11 +57,14 @@
   <!-- Subtle Ambient Glow -->
   <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-[#00EC97]/10 via-[#0072CE]/5 to-transparent blur-3xl pointer-events-none"></div>
 
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2 pointer-events-none"></div>
+
   <!-- Top Navigation -->
   <nav class="sticky top-0 z-40 bg-[#07090E]/85 backdrop-blur-xl border-b border-white/5 px-6 py-4">
     <div class="max-w-5xl mx-auto flex items-center justify-between">
       
-      <!-- Brand -->
+      <!-- Brand & Mode -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#00EC97] to-[#0072CE] p-[1.5px] shadow-lg shadow-emerald-500/20">
           <div class="w-full h-full bg-[#07090E] rounded-[14px] flex items-center justify-center">
@@ -69,35 +72,33 @@
           </div>
         </div>
         <div>
-          <span class="font-extrabold text-base tracking-tight text-white display">Orbit</span>
-          <span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#00EC97] border border-emerald-500/20">Testnet</span>
+          <span class="font-extrabold text-base tracking-tight text-white display">Orbit Protocol</span>
+          <span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-white/10">Prototype Demo</span>
         </div>
       </div>
 
-      <!-- Action Buttons in Nav -->
+      <!-- Action Buttons -->
       <div class="flex items-center gap-3">
-        <!-- Sign Up / New User Button -->
         <button onclick="openModal('signup-modal')" class="px-4 py-2 rounded-full bg-gradient-to-r from-[#00EC97] to-[#00B4D8] text-black font-extrabold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition tactile-btn flex items-center gap-1.5">
           <span>✨</span>
           <span>Sign Up / Create Pass</span>
         </button>
 
-        <!-- Current User Profile Pill -->
         <button onclick="openModal('profile-modal')" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition tactile-btn">
           <div id="nav-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-[10px] font-bold text-black">
             D
           </div>
           <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">demi.testnet</span>
-          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          <span id="nav-tier-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Gold</span>
         </button>
       </div>
 
     </div>
   </nav>
 
-  <!-- Notification Banner -->
-  <div id="signup-callout" class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border-b border-emerald-500/20 px-6 py-2.5 text-center text-xs text-emerald-300 flex items-center justify-center gap-2">
-    <span>👋 Welcome to Orbit! Testing the demo? Click <strong>"Sign Up / Create Pass"</strong> to instantly mint your custom profile or test with the loaded demo below.</span>
+  <!-- Prototype Transparency Banner -->
+  <div class="bg-slate-900/60 border-b border-white/5 px-6 py-2 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+    <span>💡 <strong>Judge Preview:</strong> Client simulation of the Orbit contract state machine. Verified by unit tests in <code class="mono text-slate-200">contracts/test/orbit_test.mjs</code>.</span>
   </div>
 
   <!-- Main Container -->
@@ -106,19 +107,19 @@
     <!-- Personal Greeting & Summary -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <p class="text-xs uppercase tracking-wider font-bold text-emerald-400">Decentralized ROSCA Protocol</p>
+        <p class="text-xs uppercase tracking-wider font-bold text-emerald-400">Decentralized ROSCA Protocol • Track: Real-World Money</p>
         <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mt-1">
-          Welcome, <span id="greeting-name" class="text-emerald-400">Demi</span>.
+          Welcome back, <span id="greeting-name" class="text-emerald-400">Demi</span>.
         </h1>
         <p class="text-slate-400 text-xs md:text-sm mt-1">
-          Your personal smart contract credit passport & savings pots on NEAR Protocol.
+          Smart contract escrow eliminates organizer theft. Collateral stakes prevent defaulters.
         </p>
       </div>
 
       <div class="flex items-center gap-3">
         <button onclick="openModal('create-modal')" class="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white font-bold text-xs transition tactile-btn flex items-center gap-1.5">
           <span>+</span>
-          <span>Start a New Circle</span>
+          <span>Launch New Circle</span>
         </button>
       </div>
     </div>
@@ -134,7 +135,7 @@
           <div class="flex items-start justify-between relative z-10">
             <div>
               <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Orbit Passport</span>
-              <div class="display text-lg font-black text-white tracking-wider mt-0.5">SOULBOUND PASS</div>
+              <div class="display text-lg font-black text-white tracking-wider mt-0.5">SOULBOUND CREDENTIAL</div>
             </div>
             
             <!-- EMV Chip graphic -->
@@ -161,18 +162,18 @@
           <!-- Bottom: Passholder Info -->
           <div class="flex items-end justify-between relative z-10 pt-2 border-t border-white/10">
             <div>
-              <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Passholder</span>
+              <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Account</span>
               <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">demi.testnet</span>
             </div>
             <div class="text-right">
-              <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Standard</span>
-              <span class="mono text-xs font-bold text-[#00EC97]">NEP-171 SOULBOUND</span>
+              <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Platform</span>
+              <span class="mono text-xs font-bold text-[#00EC97]">NEAR SMART CONTRACT</span>
             </div>
           </div>
 
         </div>
         <p class="text-center text-[11px] text-slate-400 mt-2.5">
-          🔒 Cryptographic credit credential. Never leaves your account; updates when you deposit on time.
+          🔒 Account-bound reputation credential. Upgraded with on-time deposits (+15) and circle completions (+50). Slashed on default (-150).
         </p>
       </div>
 
@@ -180,31 +181,33 @@
       <div class="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-4">
         
         <div class="glass-surface rounded-2xl p-4 space-y-1">
-          <span class="text-xs text-slate-400">Total Saved Across Pools</span>
+          <span class="text-xs text-slate-400">Total Pooled Saved</span>
           <div id="stat-saved" class="display text-2xl font-black text-white">120 <span class="text-sm font-semibold text-emerald-400">NEAR</span></div>
-          <p class="text-[11px] text-slate-500">≈ $630.00 USD value</p>
+          <p class="text-[11px] text-slate-500">Accumulated across rounds</p>
         </div>
 
         <div class="glass-surface rounded-2xl p-4 space-y-1">
           <span class="text-xs text-slate-400">On-Time Pay Record</span>
-          <div class="display text-2xl font-black text-[#00EC97]">100%</div>
-          <p class="text-[11px] text-slate-500">12 / 12 rounds on time</p>
+          <div id="stat-rate" class="display text-2xl font-black text-[#00EC97]">100%</div>
+          <p class="text-[11px] text-slate-500">12 on-time / 0 missed</p>
         </div>
 
         <div class="glass-surface rounded-2xl p-4 space-y-1 col-span-2 sm:col-span-1">
-          <span class="text-xs text-slate-400">Upcoming Lump Sum</span>
+          <span class="text-xs text-slate-400">Upcoming Payout</span>
           <div class="display text-2xl font-black text-amber-300">40 <span class="text-sm font-semibold">NEAR</span></div>
-          <p class="text-[11px] text-emerald-400 font-semibold">Your turn in Round 3</p>
+          <p class="text-[11px] text-emerald-400 font-semibold">Scheduled for Round 3</p>
         </div>
 
-        <!-- Trust Box -->
+        <!-- Trust Mechanism Summary -->
         <div class="glass-surface rounded-2xl p-5 col-span-2 sm:col-span-3 space-y-2 border-emerald-500/20 bg-emerald-500/[0.03]">
           <div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            <span>Autonomous Smart Contract Escrow</span>
+            <span>How Orbit Solves The Defaulter Problem</span>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            Eliminates organizer theft. Funds are locked by code and automatically disbursed to the designated member when each round closes.
+            1. <strong>Collateral Stake:</strong> Every member stakes 1 round of collateral upon joining.<br>
+            2. <strong>Reputation-Sorted Turn:</strong> High-reputation members get earlier payouts; unproven members get later slots.<br>
+            3. <strong>Slashing on Default:</strong> If a member misses their turn deadline, the contract seizes their collateral to fund the pot and slashes their reputation score (-150 pts).
           </p>
         </div>
 
@@ -216,169 +219,42 @@
     <div class="space-y-6 pt-2">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-bold text-white">Your Active Circles</h2>
-          <p class="text-xs text-slate-400">One-tap contributions and automated turn disbursements.</p>
+          <h2 class="text-xl font-bold text-white">Active Savings Circles</h2>
+          <p class="text-xs text-slate-400">Live rotational state machines enforcing turn order and collateral security.</p>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <!-- Circle 1: Lagos Founders -->
-        <div class="glass-surface rounded-3xl p-6 space-y-6 relative border border-white/10 hover:border-emerald-500/40 transition">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10">Round 2 of 4 Active</span>
-              <h3 class="text-lg font-bold text-white mt-1.5">Lagos Founders Circle</h3>
-              <p class="text-xs text-slate-400">Weekly tech savings pot • 4 friends</p>
-            </div>
-            <div class="text-right">
-              <span class="text-[10px] text-slate-400 uppercase font-semibold">Total Pot</span>
-              <div class="text-xl font-black text-white mono">40 NEAR</div>
-              <span class="text-[10px] text-slate-400">≈ $210 USD</span>
-            </div>
-          </div>
-
-          <!-- Turn Order Avatars -->
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs text-slate-300 font-medium">
-              <span>Turn Order</span>
-              <span class="text-emerald-400 font-bold">Current: bob.near's Turn</span>
-            </div>
-
-            <div class="grid grid-cols-4 gap-2 pt-1">
-              <div class="bg-white/5 rounded-xl p-2.5 text-center border border-emerald-500/30">
-                <div class="w-8 h-8 rounded-full bg-emerald-500 text-black font-extrabold text-xs flex items-center justify-center mx-auto mb-1">✓</div>
-                <div id="circle-user-slot" class="text-[11px] font-bold text-white truncate">demi (You)</div>
-                <div class="text-[9px] text-emerald-400">Paid Rd 1</div>
-              </div>
-
-              <div class="bg-emerald-500/10 rounded-xl p-2.5 text-center border-2 border-emerald-500 ring-2 ring-emerald-500/20 animate-pulse">
-                <div class="w-8 h-8 rounded-full bg-[#00EC97] text-black font-extrabold text-xs flex items-center justify-center mx-auto mb-1">★</div>
-                <div class="text-[11px] font-bold text-[#00EC97] truncate">bob.near</div>
-                <div class="text-[9px] text-emerald-400 font-bold">Claiming Now</div>
-              </div>
-
-              <div class="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
-                <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 font-bold text-xs flex items-center justify-center mx-auto mb-1">3</div>
-                <div class="text-[11px] font-medium text-slate-300 truncate">charlie</div>
-                <div class="text-[9px] text-slate-500">In 7 days</div>
-              </div>
-
-              <div class="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
-                <div class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 font-bold text-xs flex items-center justify-center mx-auto mb-1">4</div>
-                <div class="text-[11px] font-medium text-slate-300 truncate">dana</div>
-                <div class="text-[9px] text-slate-500">In 14 days</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="pt-3 border-t border-white/5 flex gap-3">
-            <button onclick="personalDeposit('Lagos Founders Circle', 10)" class="flex-1 py-3 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 text-white font-bold text-xs transition tactile-btn flex items-center justify-center gap-2">
-              <span>💳 Pay 10 NEAR Share</span>
-            </button>
-            <button onclick="personalClaim('Lagos Founders Circle', 40)" class="flex-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-black font-extrabold text-xs transition tactile-btn shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5">
-              <span>🎉 Disburse to Bob</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Circle 2: Family Susu -->
-        <div class="glass-surface rounded-3xl p-6 space-y-6 relative border border-white/10 hover:border-emerald-500/40 transition">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 px-2 py-0.5 rounded bg-amber-500/10">Round 3 of 5 • YOUR TURN NEXT</span>
-              <h3 class="text-lg font-bold text-white mt-1.5">Family Emergency Reserve</h3>
-              <p class="text-xs text-slate-400">Monthly family savings pot • 5 members</p>
-            </div>
-            <div class="text-right">
-              <span class="text-[10px] text-slate-400 uppercase font-semibold">Total Pot</span>
-              <div class="text-xl font-black text-amber-300 mono">100 NEAR</div>
-              <span class="text-[10px] text-slate-400">≈ $525 USD</span>
-            </div>
-          </div>
-
-          <!-- Progress -->
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs text-slate-300 font-medium">
-              <span>Your Turn Status</span>
-              <span class="text-amber-300 font-bold">You collect the 100 NEAR Pot next!</span>
-            </div>
-
-            <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden p-0.5">
-              <div class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 rounded-full" style="width: 60%"></div>
-            </div>
-            <div class="flex justify-between text-[11px] text-slate-400 pt-0.5">
-              <span>3 of 5 rounds completed</span>
-              <span class="text-white font-medium">Estimated payout: in 5 days</span>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="pt-3 border-t border-white/5 flex gap-3">
-            <button onclick="personalDeposit('Family Emergency Reserve', 20)" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-black font-extrabold text-xs transition tactile-btn shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-              <span>💳 Pay Monthly Contribution (20 NEAR)</span>
-            </button>
-          </div>
-        </div>
-
+      <!-- Circles Container (Rendered dynamically) -->
+      <div id="circles-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Rendered by renderCircles() -->
       </div>
     </div>
 
-    <!-- Activity & Receipt Ledger -->
+    <!-- Verified Activity Ledger -->
     <div class="glass-surface rounded-3xl p-6 space-y-4">
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-base font-bold text-white">Live Verified Activity</h3>
-          <p class="text-xs text-slate-400">On-chain transaction confirmations and score upgrades</p>
+          <h3 class="text-base font-bold text-white">Verified Protocol Activity</h3>
+          <p class="text-xs text-slate-400">State transitions, deposits, and automated disbursements</p>
         </div>
-        <span class="mono text-xs text-[#00EC97] flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-[#00EC97] animate-ping"></span>
-          NEAR RPC Connected
-        </span>
+        <span class="mono text-xs text-slate-400">Orbit State Ledger</span>
       </div>
 
       <div id="personal-feed" class="divide-y divide-white/5 text-xs">
-        <div class="py-3 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">↗</div>
-            <div>
-              <div class="font-semibold text-white">Contribution to Lagos Founders Pot</div>
-              <div class="text-[11px] text-slate-400">Round 1 • Confirmed on-chain</div>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="font-bold text-white mono">-10.00 NEAR</div>
-            <span class="text-[10px] text-emerald-400 font-semibold">+15 Credit Score</span>
-          </div>
-        </div>
-
-        <div class="py-3 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">🪪</div>
-            <div>
-              <div class="font-semibold text-white">Soulbound Passport Tier Upgraded</div>
-              <div class="text-[11px] text-slate-400">Promoted from Silver to Gold Tier</div>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="font-bold text-purple-300">Level 2 Credential</div>
-            <span class="text-[10px] text-slate-400">Score 780 pts</span>
-          </div>
-        </div>
+        <!-- Feed entries appended safely via DOM API -->
       </div>
     </div>
 
   </main>
 
-  <!-- MODAL: SIGN UP / FASTAUTH ONBOARDING -->
+  <!-- MODAL: SIGN UP -->
   <div id="signup-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-surface bg-[#0D131C] rounded-3xl max-w-md w-full p-6 border border-white/15 space-y-5 shadow-2xl">
       <div class="flex justify-between items-start">
         <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">FastAuth Onboarding</span>
-          <h3 class="text-lg font-bold text-white mt-0.5">Create Your Orbit Passport</h3>
-          <p class="text-xs text-slate-400">No seed phrases needed. Instant web2 sign-up.</p>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Fast Registration</span>
+          <h3 class="text-lg font-bold text-white mt-0.5">Mint Orbit Passport</h3>
+          <p class="text-xs text-slate-400">Initialize a new on-chain participant persona.</p>
         </div>
         <button onclick="closeModal('signup-modal')" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
       </div>
@@ -386,29 +262,24 @@
       <div class="space-y-3.5 text-xs">
         <div>
           <label class="block text-slate-300 font-semibold mb-1">Your Full Name</label>
-          <input id="signup-fullname" type="text" placeholder="e.g. Maya Chen" class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
+          <input id="signup-fullname" type="text" placeholder="e.g. Alex Rivera" class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
         </div>
 
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Desired NEAR Handle</label>
+          <label class="block text-slate-300 font-semibold mb-1">NEAR Handle</label>
           <div class="flex">
-            <input id="signup-handle" type="text" placeholder="maya" class="flex-1 px-3.5 py-2.5 rounded-l-xl bg-white/5 border border-white/10 border-r-0 text-white mono focus:outline-none focus:border-emerald-500">
+            <input id="signup-handle" type="text" placeholder="alex" class="flex-1 px-3.5 py-2.5 rounded-l-xl bg-white/5 border border-white/10 border-r-0 text-white mono focus:outline-none focus:border-emerald-500">
             <span class="px-3 py-2.5 rounded-r-xl bg-white/10 border border-white/10 text-slate-400 mono">.testnet</span>
           </div>
-        </div>
-
-        <div>
-          <label class="block text-slate-300 font-semibold mb-1">Email (For FastAuth Passkey)</label>
-          <input id="signup-email" type="email" placeholder="maya@example.com" class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
         </div>
 
         <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
           <div class="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
             <span>✨</span>
-            <span>What happens when you sign up:</span>
+            <span>Starting Reputation:</span>
           </div>
           <p class="text-[11px] text-slate-300">
-            A free NEAR Testnet account will be assigned, your <strong>NEP-171 Soulbound Credit Passport</strong> will be minted, and you will receive a base trust score of 500 points.
+            Every new account begins with a baseline trust score of <strong>500 points (Bronze Tier)</strong>. Staking collateral and paying on time elevates score and unlocks earlier payout queue priority.
           </p>
         </div>
       </div>
@@ -420,20 +291,18 @@
     </div>
   </div>
 
-  <!-- MODAL: PROFILE / SWITCHER -->
+  <!-- MODAL: PROFILE SWITCHER -->
   <div id="profile-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-surface bg-[#0D131C] rounded-3xl max-w-md w-full p-6 border border-white/15 space-y-5 shadow-2xl">
       <div class="flex justify-between items-center">
         <div>
-          <h3 class="text-lg font-bold text-white">Select Account Persona</h3>
-          <p class="text-xs text-slate-400">Switch accounts or test with different profiles</p>
+          <h3 class="text-lg font-bold text-white">Select Persona</h3>
+          <p class="text-xs text-slate-400">Switch between test members to simulate multi-party rounds</p>
         </div>
         <button onclick="closeModal('profile-modal')" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
       </div>
 
-      <div id="profiles-list" class="space-y-3">
-        <!-- Rendered dynamically -->
-      </div>
+      <div id="profiles-list" class="space-y-3"></div>
 
       <div class="pt-3 border-t border-white/10 flex justify-between items-center">
         <button onclick="closeModal('profile-modal'); openModal('signup-modal');" class="text-xs font-bold text-emerald-400 hover:underline">
@@ -448,51 +317,144 @@
   <div id="create-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="glass-surface bg-[#0D131C] rounded-3xl max-w-md w-full p-6 border border-white/15 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center">
-        <h3 class="text-lg font-bold text-white">Start a New Savings Circle</h3>
+        <h3 class="text-lg font-bold text-white">Launch New Savings Circle</h3>
         <button onclick="closeModal('create-modal')" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
           <label class="block text-slate-300 font-semibold mb-1">Circle Name</label>
-          <input id="circle-title" type="text" value="London Web3 Builders Pot" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
+          <input id="circle-title-input" type="text" value="Community Builders Pot" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Contribution (NEAR)</label>
-            <input id="circle-amt" type="number" value="15" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
+            <label class="block text-slate-300 font-semibold mb-1">Contribution per round (NEAR)</label>
+            <input id="circle-amt-input" type="number" value="10" min="1" max="1000" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
             <label class="block text-slate-300 font-semibold mb-1">Total Members</label>
-            <input id="circle-size" type="number" value="4" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
+            <input id="circle-size-input" type="number" value="4" min="2" max="20" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
           </div>
         </div>
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Payout Cadence</label>
-          <select class="w-full px-3 py-2.5 rounded-xl bg-[#161B22] border border-white/10 text-white focus:outline-none focus:border-emerald-500">
-            <option>Weekly (every 7 days)</option>
-            <option>Bi-Weekly (every 14 days)</option>
-            <option>Monthly (every 30 days)</option>
+          <label class="block text-slate-300 font-semibold mb-1">Cadence / Payout Interval</label>
+          <select id="circle-cadence-input" class="w-full px-3 py-2.5 rounded-xl bg-[#161B22] border border-white/10 text-white focus:outline-none focus:border-emerald-500">
+            <option value="Weekly (7 days)">Weekly (7 days)</option>
+            <option value="Bi-Weekly (14 days)">Bi-Weekly (14 days)</option>
+            <option value="Monthly (30 days)">Monthly (30 days)</option>
           </select>
         </div>
       </div>
 
       <div class="pt-3 border-t border-white/5 flex gap-2">
         <button onclick="closeModal('create-modal')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 text-xs font-semibold">Cancel</button>
-        <button onclick="launchCircle()" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold shadow-lg shadow-emerald-500/20">Create Circle</button>
+        <button onclick="submitNewCircle()" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold shadow-lg shadow-emerald-500/20">Instantiate Circle</button>
       </div>
     </div>
   </div>
 
   <script>
-    // User Persona State
+    // State Store
     let userProfiles = [
-      { handle: "demi.testnet", name: "Demi", score: 780, tier: "Gold Tier", avatar: "D" },
-      { handle: "charlie.near", name: "Charlie", score: 620, tier: "Silver Tier", avatar: "C" },
-      { handle: "amara.testnet", name: "Amara", score: 540, tier: "Bronze Tier", avatar: "A" }
+      { handle: "demi.testnet", name: "Demi", score: 780, avatar: "D" },
+      { handle: "bob.near", name: "Bob", score: 820, avatar: "B" },
+      { handle: "charlie.near", name: "Charlie", score: 620, avatar: "C" },
+      { handle: "dana.near", name: "Dana", score: 500, avatar: "A" }
     ];
 
     let currentProfile = userProfiles[0];
+
+    // Reactive Circles State
+    let circlesData = [
+      {
+        id: "circle_1",
+        name: "Lagos Founders Circle",
+        cadence: "Weekly (7 days)",
+        contribution: 10,
+        currentRound: 2,
+        totalRounds: 4,
+        members: ["demi.testnet", "bob.near", "charlie.near", "dana.near"],
+        // Payout order sorted by reputation descending: Bob (820) -> Demi (780) -> Charlie (620) -> Dana (500)
+        payoutOrder: ["bob.near", "demi.testnet", "charlie.near", "dana.near"],
+        paidThisRound: ["bob.near"],
+        pot: 10, // Bob has deposited 10
+        defaulted: []
+      }
+    ];
+
+    function calculateTier(score) {
+      if (score >= 850) return "Platinum Tier";
+      if (score >= 700) return "Gold Tier";
+      if (score >= 550) return "Silver Tier";
+      return "Bronze Tier";
+    }
+
+    function showToast(message, type = "success") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `p-4 rounded-2xl text-xs font-medium border shadow-2xl flex items-center gap-3 transition-all duration-300 pointer-events-auto ${
+        type === 'success' 
+          ? 'bg-[#0D1A14] border-emerald-500/30 text-emerald-300' 
+          : 'bg-[#1C1214] border-red-500/30 text-red-300'
+      }`;
+      
+      const icon = document.createElement('span');
+      icon.textContent = type === 'success' ? '✓' : '⚠️';
+      const text = document.createElement('span');
+      text.textContent = message;
+
+      toast.appendChild(icon);
+      toast.appendChild(text);
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function addFeedEntry(title, subtitle, amountText, scoreText, isPositive = true) {
+      const feed = document.getElementById('personal-feed');
+      const item = document.createElement('div');
+      item.className = "py-3 flex items-center justify-between";
+
+      const left = document.createElement('div');
+      left.className = "flex items-center gap-3";
+
+      const icon = document.createElement('div');
+      icon.className = `w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+        isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+      }`;
+      icon.textContent = isPositive ? '↗' : '⚠️';
+
+      const desc = document.createElement('div');
+      const t = document.createElement('div');
+      t.className = "font-semibold text-white";
+      t.textContent = title;
+      const s = document.createElement('div');
+      s.className = "text-[11px] text-slate-400";
+      s.textContent = subtitle;
+      desc.appendChild(t);
+      desc.appendChild(s);
+
+      left.appendChild(icon);
+      left.appendChild(desc);
+
+      const right = document.createElement('div');
+      right.className = "text-right";
+      const amt = document.createElement('div');
+      amt.className = `font-bold mono ${isPositive ? 'text-white' : 'text-red-400'}`;
+      amt.textContent = amountText;
+      const sc = document.createElement('div');
+      sc.className = "text-[10px] text-emerald-400 font-semibold";
+      sc.textContent = scoreText;
+      right.appendChild(amt);
+      right.appendChild(sc);
+
+      item.appendChild(left);
+      item.appendChild(right);
+      feed.prepend(item);
+    }
 
     function openModal(id) {
       document.getElementById(id).classList.remove('hidden');
@@ -507,18 +469,42 @@
 
     function renderProfileList() {
       const container = document.getElementById('profiles-list');
-      container.innerHTML = userProfiles.map(p => `
-        <button onclick="activateProfile('${p.handle}')" class="w-full p-3 rounded-2xl bg-white/5 hover:bg-white/10 border ${p.handle === currentProfile.handle ? 'border-emerald-500/60 bg-emerald-500/5' : 'border-white/5'} text-left flex items-center justify-between transition">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-emerald-400 text-black font-extrabold flex items-center justify-center text-xs">${p.avatar}</div>
-            <div>
-              <div class="font-bold text-white text-xs">${p.handle}</div>
-              <div class="text-[10px] text-slate-400">${p.score} pts • ${p.tier}</div>
-            </div>
-          </div>
-          ${p.handle === currentProfile.handle ? '<span class="text-xs text-emerald-400 font-bold">Active</span>' : '<span class="text-xs text-slate-400">Switch</span>'}
-        </button>
-      `).join('');
+      container.textContent = '';
+
+      userProfiles.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = `w-full p-3 rounded-2xl bg-white/5 hover:bg-white/10 border ${
+          p.handle === currentProfile.handle ? 'border-emerald-500/60 bg-emerald-500/5' : 'border-white/5'
+        } text-left flex items-center justify-between transition`;
+        btn.onclick = () => activateProfile(p.handle);
+
+        const left = document.createElement('div');
+        left.className = "flex items-center gap-3";
+        const av = document.createElement('div');
+        av.className = "w-8 h-8 rounded-full bg-emerald-400 text-black font-extrabold flex items-center justify-center text-xs";
+        av.textContent = p.avatar;
+
+        const info = document.createElement('div');
+        const h = document.createElement('div');
+        h.className = "font-bold text-white text-xs";
+        h.textContent = p.handle;
+        const sub = document.createElement('div');
+        sub.className = "text-[10px] text-slate-400";
+        sub.textContent = `${p.score} pts • ${calculateTier(p.score)}`;
+        info.appendChild(h);
+        info.appendChild(sub);
+
+        left.appendChild(av);
+        left.appendChild(info);
+
+        const status = document.createElement('span');
+        status.className = "text-xs " + (p.handle === currentProfile.handle ? "text-emerald-400 font-bold" : "text-slate-400");
+        status.textContent = p.handle === currentProfile.handle ? "Active" : "Switch";
+
+        btn.appendChild(left);
+        btn.appendChild(status);
+        container.appendChild(btn);
+      });
     }
 
     function activateProfile(handle) {
@@ -526,117 +512,333 @@
       if (found) {
         currentProfile = found;
         applyProfileToUI();
+        renderCircles();
         closeModal('profile-modal');
+        showToast(`Switched active persona to ${currentProfile.handle}`);
       }
     }
 
     function applyProfileToUI() {
+      const tier = calculateTier(currentProfile.score);
       document.getElementById('user-display-handle').textContent = currentProfile.handle;
       document.getElementById('greeting-name').textContent = currentProfile.name;
       document.getElementById('card-owner').textContent = currentProfile.handle;
       document.getElementById('card-score').textContent = currentProfile.score;
-      document.getElementById('card-tier-badge').textContent = currentProfile.tier;
+      document.getElementById('card-tier-badge').textContent = tier;
+      document.getElementById('nav-tier-badge').textContent = tier.split(' ')[0];
       document.getElementById('nav-avatar').textContent = currentProfile.avatar;
-      document.getElementById('circle-user-slot').textContent = `${currentProfile.name.toLowerCase()} (You)`;
     }
 
     function completeSignUp() {
       const name = document.getElementById('signup-fullname').value.trim() || "Guest Builder";
       let handle = document.getElementById('signup-handle').value.trim() || name.toLowerCase().replace(/\s+/g, '');
-      if (!handle.endsWith('.testnet')) handle += '.testnet';
-      
+      if (!handle.endsWith('.testnet') && !handle.endsWith('.near')) handle += '.testnet';
+
       const newProfile = {
         handle: handle,
         name: name,
-        score: 520, // Initial base starting score
-        tier: "Bronze Tier",
+        score: 500, // Starts at 500 (Bronze)
         avatar: name.charAt(0).toUpperCase()
       };
 
       userProfiles.unshift(newProfile);
       currentProfile = newProfile;
       applyProfileToUI();
+      renderCircles();
       closeModal('signup-modal');
 
-      // Add to feed
-      const feed = document.getElementById('personal-feed');
-      const item = document.createElement('div');
-      item.className = "py-3 flex items-center justify-between animate-pulse";
-      item.innerHTML = `
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">✨</div>
-          <div>
-            <div class="font-semibold text-white">Passport Minted for ${name}</div>
-            <div class="text-[11px] text-slate-400">Handle: ${handle} • NEP-171 Soulbound Pass</div>
-          </div>
-        </div>
-        <div class="text-right">
-          <div class="font-bold text-emerald-400">520 pts</div>
-          <span class="text-[10px] text-emerald-400 font-semibold">Bronze Tier</span>
-        </div>
-      `;
-      feed.prepend(item);
+      addFeedEntry(
+        `Passport Initialized for ${name}`,
+        `${handle} • Initial Trust Baseline Staked`,
+        "0.00 NEAR",
+        "500 pts (Bronze)",
+        true
+      );
 
-      alert(`🎉 Welcome to Orbit, ${name}!\n\nYour account has been created as "${handle}".\nYour Soulbound NEP-171 Passport is active with a starting score of 520 points!`);
+      showToast(`Welcome ${name}! Your Orbit Passport is active with 500 base points.`);
     }
 
-    function personalDeposit(circleName, amount) {
-      currentProfile.score = Math.min(1000, currentProfile.score + 15);
-      document.getElementById('card-score').textContent = currentProfile.score;
-      
-      const feed = document.getElementById('personal-feed');
-      const item = document.createElement('div');
-      item.className = "py-3 flex items-center justify-between";
-      item.innerHTML = `
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">↗</div>
-          <div>
-            <div class="font-semibold text-white">Deposit to ${circleName}</div>
-            <div class="text-[11px] text-slate-400">By ${currentProfile.handle} • Confirmed on-chain</div>
-          </div>
-        </div>
-        <div class="text-right">
-          <div class="font-bold text-white mono">-${amount}.00 NEAR</div>
-          <span class="text-[10px] text-emerald-400 font-semibold">+15 Credit Score</span>
-        </div>
-      `;
-      feed.prepend(item);
+    function renderCircles() {
+      const grid = document.getElementById('circles-grid');
+      grid.textContent = '';
 
-      alert(`✅ Deposit Confirmed!\n\n${currentProfile.handle} contributed ${amount} NEAR to ${circleName}.\nYour on-chain reputation score rose to ${currentProfile.score}!`);
+      circlesData.forEach(circle => {
+        const card = document.createElement('div');
+        card.className = "glass-surface rounded-3xl p-6 space-y-6 relative border border-white/10 hover:border-emerald-500/30 transition";
+
+        // Header
+        const head = document.createElement('div');
+        head.className = "flex items-start justify-between";
+
+        const leftHead = document.createElement('div');
+        const badge = document.createElement('span');
+        badge.className = "text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10";
+        badge.textContent = `Round ${circle.currentRound} of ${circle.totalRounds} Active`;
+
+        const title = document.createElement('h3');
+        title.className = "text-lg font-bold text-white mt-1.5";
+        title.textContent = circle.name;
+
+        const sub = document.createElement('p');
+        sub.className = "text-xs text-slate-400";
+        sub.textContent = `${circle.cadence} • ${circle.totalRounds} members`;
+
+        leftHead.appendChild(badge);
+        leftHead.appendChild(title);
+        leftHead.appendChild(sub);
+
+        const rightHead = document.createElement('div');
+        rightHead.className = "text-right";
+        const potLabel = document.createElement('span');
+        potLabel.className = "text-[10px] text-slate-400 uppercase font-semibold";
+        potLabel.textContent = "Current Pot in Escrow";
+        const potVal = document.createElement('div');
+        potVal.className = "text-xl font-black text-white mono";
+        potVal.textContent = `${circle.pot} / ${circle.contribution * circle.totalRounds} NEAR`;
+        const membersPaid = document.createElement('span');
+        membersPaid.className = "text-[10px] text-emerald-400 font-semibold";
+        membersPaid.textContent = `${circle.paidThisRound.length} of ${circle.totalRounds} Paid`;
+
+        rightHead.appendChild(potLabel);
+        rightHead.appendChild(potVal);
+        rightHead.appendChild(membersPaid);
+
+        head.appendChild(leftHead);
+        head.appendChild(rightHead);
+        card.appendChild(head);
+
+        // Turn order section
+        const turnBox = document.createElement('div');
+        turnBox.className = "space-y-2";
+        const turnTitle = document.createElement('div');
+        turnTitle.className = "flex justify-between text-xs text-slate-300 font-medium";
+        
+        const scheduledRecipient = circle.payoutOrder[circle.currentRound - 1];
+        turnTitle.innerHTML = `<span>Turn Order (Reputation-Sorted)</span><span class="text-emerald-400 font-bold">Recipient: ${scheduledRecipient}</span>`;
+        turnBox.appendChild(turnTitle);
+
+        // Member Pills
+        const memberList = document.createElement('div');
+        memberList.className = "grid grid-cols-4 gap-2 pt-1";
+
+        circle.members.forEach((m, idx) => {
+          const pill = document.createElement('div');
+          const isPaid = circle.paidThisRound.includes(m);
+          const isRecipient = (m === scheduledRecipient);
+          const isDefaulter = circle.defaulted.includes(m);
+
+          pill.className = `rounded-xl p-2.5 text-center border ${
+            isDefaulter 
+              ? 'bg-red-500/10 border-red-500/40 text-red-300'
+              : isRecipient 
+                ? 'bg-emerald-500/10 border-2 border-emerald-500 ring-2 ring-emerald-500/20' 
+                : 'bg-white/5 border-white/5'
+          }`;
+
+          const dot = document.createElement('div');
+          dot.className = `w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center mx-auto mb-1 ${
+            isDefaulter 
+              ? 'bg-red-500 text-white' 
+              : isPaid 
+                ? 'bg-emerald-500 text-black' 
+                : 'bg-slate-700 text-slate-300'
+          }`;
+          dot.textContent = isDefaulter ? '!' : (isPaid ? '✓' : idx + 1);
+
+          const nameTag = document.createElement('div');
+          nameTag.className = "text-[10px] font-bold text-white truncate";
+          nameTag.textContent = m === currentProfile.handle ? `${m.split('.')[0]} (You)` : m.split('.')[0];
+
+          const statusTag = document.createElement('div');
+          statusTag.className = "text-[9px] " + (isDefaulter ? "text-red-400 font-bold" : (isPaid ? "text-emerald-400" : "text-slate-500"));
+          statusTag.textContent = isDefaulter ? "Defaulted" : (isPaid ? "Paid" : "Pending");
+
+          pill.appendChild(dot);
+          pill.appendChild(nameTag);
+          pill.appendChild(statusTag);
+          memberList.appendChild(pill);
+        });
+        turnBox.appendChild(memberList);
+        card.appendChild(turnBox);
+
+        // Actions Bar
+        const actions = document.createElement('div');
+        actions.className = "pt-3 border-t border-white/5 flex flex-wrap gap-2";
+
+        // Deposit button
+        const depBtn = document.createElement('button');
+        const hasDeposited = circle.paidThisRound.includes(currentProfile.handle);
+        depBtn.className = `flex-1 py-2.5 rounded-xl font-bold text-xs transition tactile-btn flex items-center justify-center gap-1.5 ${
+          hasDeposited 
+            ? 'bg-white/5 text-slate-500 cursor-not-allowed' 
+            : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+        }`;
+        depBtn.disabled = hasDeposited;
+        depBtn.textContent = hasDeposited ? "✓ You Deposited" : `💳 Pay ${circle.contribution} NEAR Share`;
+        depBtn.onclick = () => executeCircleDeposit(circle.id);
+        actions.appendChild(depBtn);
+
+        // Disburse button
+        const disburseBtn = document.createElement('button');
+        const canDisburse = circle.paidThisRound.length >= circle.totalRounds;
+        disburseBtn.className = `flex-1 py-2.5 rounded-xl font-extrabold text-xs transition tactile-btn flex items-center justify-center gap-1.5 ${
+          canDisburse
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black shadow-lg shadow-emerald-500/20'
+            : 'bg-white/5 text-slate-500 border border-white/5'
+        }`;
+        disburseBtn.textContent = canDisburse ? `🎉 Disburse Pot to ${scheduledRecipient.split('.')[0]}` : `Pot Incomplete (${circle.paidThisRound.length}/${circle.totalRounds})`;
+        disburseBtn.onclick = () => executeCircleClaim(circle.id);
+        actions.appendChild(disburseBtn);
+
+        // Simulate Defaulter button (Proof of Anti-Default)
+        const slashBtn = document.createElement('button');
+        slashBtn.className = "w-full py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/15 border border-red-500/20 text-[11px] font-semibold text-red-300 transition flex items-center justify-center gap-1";
+        slashBtn.textContent = "⚠️ Simulate Defaulter Timeout & Seize Collateral";
+        slashBtn.onclick = () => executeDefaulterSimulation(circle.id);
+        actions.appendChild(slashBtn);
+
+        card.appendChild(actions);
+        grid.appendChild(card);
+      });
     }
 
-    function personalClaim(circleName, potAmount) {
-      const feed = document.getElementById('personal-feed');
-      const item = document.createElement('div');
-      item.className = "py-3 flex items-center justify-between";
-      item.innerHTML = `
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">🎉</div>
-          <div>
-            <div class="font-semibold text-white">Round 2 Lump Sum Disbursed</div>
-            <div class="text-[11px] text-slate-400">${circleName} • Transferred to bob.near</div>
-          </div>
-        </div>
-        <div class="text-right">
-          <div class="font-bold text-emerald-400 mono">${potAmount}.00 NEAR</div>
-          <span class="text-[10px] text-slate-400 font-medium">Round 3 now starting</span>
-        </div>
-      `;
-      feed.prepend(item);
+    function executeCircleDeposit(circleId) {
+      const circle = circlesData.find(c => c.id === circleId);
+      if (!circle) return;
 
-      alert(`🎉 Payout Disbursed!\n\n${potAmount} NEAR released from smart contract escrow to bob.near.\nRound 2 complete!`);
+      if (!circle.paidThisRound.includes(currentProfile.handle)) {
+        circle.paidThisRound.push(currentProfile.handle);
+        circle.pot += circle.contribution;
+
+        // Reward on-time payment
+        currentProfile.score = Math.min(1000, currentProfile.score + 15);
+        applyProfileToUI();
+        renderCircles();
+
+        addFeedEntry(
+          `Deposit to ${circle.name}`,
+          `${currentProfile.handle} contributed ${circle.contribution} NEAR for Round ${circle.currentRound}`,
+          `-${circle.contribution}.00 NEAR`,
+          "+15 Credit Score",
+          true
+        );
+
+        showToast(`Deposit confirmed! Pot now holds ${circle.pot} NEAR.`);
+      }
     }
 
-    function launchCircle() {
-      const title = document.getElementById('circle-title').value;
-      const amt = document.getElementById('circle-amt').value;
-      const size = document.getElementById('circle-size').value;
+    function executeCircleClaim(circleId) {
+      const circle = circlesData.find(c => c.id === circleId);
+      if (!circle) return;
+
+      if (circle.paidThisRound.length < circle.totalRounds) {
+        showToast("Cannot disburse: round deposits are still pending.", "error");
+        return;
+      }
+
+      const recipient = circle.payoutOrder[circle.currentRound - 1];
+      const payoutAmount = circle.pot;
+
+      addFeedEntry(
+        `Round ${circle.currentRound} Pot Disbursed`,
+        `${payoutAmount} NEAR released to scheduled recipient ${recipient}`,
+        `+${payoutAmount}.00 NEAR`,
+        "Round Settled",
+        true
+      );
+
+      // Advance round
+      if (circle.currentRound >= circle.totalRounds) {
+        showToast(`🎉 Circle Complete! All ${circle.totalRounds} rounds disbursed and collaterals refunded!`);
+        circle.currentRound = circle.totalRounds;
+      } else {
+        circle.currentRound += 1;
+        circle.paidThisRound = [];
+        circle.pot = 0;
+        showToast(`🎉 Disbursed ${payoutAmount} NEAR to ${recipient}! Starting Round ${circle.currentRound}.`);
+      }
+
+      renderCircles();
+    }
+
+    function executeDefaulterSimulation(circleId) {
+      const circle = circlesData.find(c => c.id === circleId);
+      if (!circle) return;
+
+      // Find an unpaid member that is not current profile
+      const unpaid = circle.members.find(m => !circle.paidThisRound.includes(m) && m !== currentProfile.handle);
+      if (!unpaid) {
+        showToast("All members have already deposited for this round!", "error");
+        return;
+      }
+
+      // Seize collateral to fund pot
+      circle.paidThisRound.push(unpaid);
+      circle.pot += circle.contribution;
+      if (!circle.defaulted.includes(unpaid)) {
+        circle.defaulted.push(unpaid);
+      }
+
+      // Slashes target profile if in our list
+      const targetP = userProfiles.find(p => p.handle === unpaid);
+      if (targetP) {
+        targetP.score = Math.max(0, targetP.score - 150);
+      }
+
+      applyProfileToUI();
+      renderCircles();
+
+      addFeedEntry(
+        `Default Resolved: ${unpaid}`,
+        `Missed deadline. 10 NEAR collateral seized to fund pot; reputation slashed (-150).`,
+        "+10.00 NEAR (Collateral)",
+        "-150 Score Slashed",
+        false
+      );
+
+      showToast(`⚠️ Collateral seized for ${unpaid}! Pot funded, defaulter slashed.`);
+    }
+
+    function submitNewCircle() {
+      const title = document.getElementById('circle-title-input').value.trim() || "Community Circle";
+      const amt = parseInt(document.getElementById('circle-amt-input').value, 10) || 10;
+      const size = parseInt(document.getElementById('circle-size-input').value, 10) || 4;
+      const cadence = document.getElementById('circle-cadence-input').value;
+
+      const newId = `circle_${circlesData.length + 1}`;
+      const newCircle = {
+        id: newId,
+        name: title,
+        cadence: cadence,
+        contribution: amt,
+        currentRound: 1,
+        totalRounds: size,
+        members: [currentProfile.handle, "bob.near", "charlie.near", "dana.near"].slice(0, size),
+        payoutOrder: [currentProfile.handle, "bob.near", "charlie.near", "dana.near"].slice(0, size),
+        paidThisRound: [currentProfile.handle],
+        pot: amt,
+        defaulted: []
+      };
+
+      circlesData.push(newCircle);
+      renderCircles();
       closeModal('create-modal');
-      alert(`🚀 Circle "${title}" Created!\n\nParameters: ${amt} NEAR/round across ${size} friends.\nContract initialized on NEAR Testnet.`);
+
+      addFeedEntry(
+        `New Circle Initialized: ${title}`,
+        `${size} members • ${amt} NEAR / round • Collateral Staked`,
+        `-${amt}.00 NEAR (Stake)`,
+        "+50 Host Trust",
+        true
+      );
+
+      showToast(`Circle "${title}" created and active on screen!`);
     }
 
-    // Init
+    // Initialize View
     applyProfileToUI();
+    renderCircles();
+    addFeedEntry("Lagos Founders Circle Active", "Round 2 in progress • 4 members committed", "40.00 NEAR", "Escrow Locked", true);
   </script>
 </body>
 </html>
