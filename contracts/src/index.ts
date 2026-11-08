@@ -1,380 +1,702 @@
-import { NearBindgen, near, call, view, initialize, LookupMap, UnorderedMap } from "near-sdk-js";
-import { Circle, CircleStatus, ReputationProfile, ReputationTier, AccountId } from "./types";
+import {
+  getInputString,
+  predecessorAccountId,
+  attachedDepositBytes,
+  blockTimestampMs,
+  log,
+  assertCondition,
+  valueReturn,
+  storageRead,
+  storageWrite,
+  transferNear,
+  u128FromString,
+  u128ToString,
+  u128Compare,
+  u128Add,
+  u128Sub,
+  u128MulSmall,
+  u128IsZero,
+  getJsonString,
+  getJsonNumber
+} from "./near_runtime";
 
-@NearBindgen({})
-export class OrbitProtocol {
-  circles: UnorderedMap<Circle> = new UnorderedMap<Circle>("c");
-  reputation: LookupMap<ReputationProfile> = new LookupMap<ReputationProfile>("r");
-  circle_counter: bigint = 0n;
+// Minimum contribution: 1 NEAR (10^24 yoctoNEAR) to prevent sybil score farming with dust circles
+const MIN_CONTRIBUTION_YOCTO = "1000000000000000000000000";
 
-  @initialize({})
-  init(): void {
-    this.circle_counter = 0n;
+function computeTier(score: i32): string {
+  if (score >= 850) return "Platinum";
+  if (score >= 700) return "Gold";
+  if (score >= 550) return "Silver";
+  return "Bronze";
+}
+
+function splitCsv(s: string): Array<string> {
+  const out = new Array<string>();
+  if (s.length == 0) return out;
+  const parts = s.split(",");
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i].length > 0) out.push(parts[i]);
+  }
+  return out;
+}
+
+function joinCsv(arr: Array<string>): string {
+  return arr.join(",");
+}
+
+function arrayContains(arr: Array<string>, item: string): bool {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] == item) return true;
+  }
+  return false;
+}
+
+function jsonStringArray(arr: Array<string>): string {
+  let out = "[";
+  for (let i = 0; i < arr.length; i++) {
+    if (i > 0) out += ",";
+    out += '"' + arr[i] + '"';
+  }
+  return out + "]";
+}
+
+// ------------------------------------------------------------
+// Reputation Storage Helpers
+// ------------------------------------------------------------
+
+function getScoreReadOnly(accountId: string): i32 {
+  const raw = storageRead("rep:" + accountId, "");
+  if (raw.length == 0) return 500;
+  const parts = raw.split("|");
+  return i32(I64.parseInt(parts[3]));
+}
+
+function getProfileJsonReadOnly(accountId: string): string {
+  const raw = storageRead("rep:" + accountId, "");
+  let completed: i32 = 0;
+  let onTime: i32 = 0;
+  let missed: i32 = 0;
+  let score: i32 = 500;
+  let slashed = "0";
+
+  if (raw.length > 0) {
+    const parts = raw.split("|");
+    completed = i32(I64.parseInt(parts[0]));
+    onTime = i32(I64.parseInt(parts[1]));
+    missed = i32(I64.parseInt(parts[2]));
+    score = i32(I64.parseInt(parts[3]));
+    slashed = parts[4];
   }
 
-  // ----------------------------------------------------
-  // CIRCLE LIFECYCLE
-  // ----------------------------------------------------
+  const tier = computeTier(score);
+  return (
+    '{"account_id":"' + accountId +
+    '","circles_completed":' + completed.toString() +
+    ',"on_time_payments":' + onTime.toString() +
+    ',"missed_payments":' + missed.toString() +
+    ',"reputation_score":' + score.toString() +
+    ',"tier":"' + tier +
+    '","collateral_slashed_total":"' + slashed + '"}'
+  );
+}
 
-  @call({ payableFunction: true })
-  create_circle({
-    name,
-    contribution_amount,
-    round_duration_ms,
-    total_members
-  }: {
-    name: string;
-    contribution_amount: string;
-    round_duration_ms: number;
-    total_members: number;
-  }): string {
-    const caller = near.predecessorAccountId();
-    const deposit = near.attachedDeposit();
-
-    if (total_members < 2 || total_members > 20) {
-      near.panicUtf8("Circle must require between 2 and 20 members.");
-    }
-    if (round_duration_ms < 60_000) {
-      near.panicUtf8("Round duration must be at least 1 minute.");
-    }
-
-    const required_collateral = BigInt(contribution_amount);
-    if (deposit < required_collateral) {
-      near.panicUtf8(`Creator must stake 1 round of collateral (${required_collateral.toString()} yoctoNEAR).`);
-    }
-
-    this.circle_counter += 1n;
-    const circle_id = `circle_${this.circle_counter.toString()}`;
-
-    const new_circle: Circle = {
-      id: circle_id,
-      name,
-      creator: caller,
-      contribution_amount,
-      collateral_per_member: contribution_amount,
-      round_duration_ms,
-      total_members,
-      members: [caller],
-      payout_order: [caller],
-      current_round: 0,
-      round_start_time: 0,
-      round_deadline: 0,
-      status: CircleStatus.Pending,
-      total_pot: "0",
-      round_paid_members: {},
-      payout_claimed: {},
-      member_collateral: { [caller]: deposit.toString() },
-      defaulted_members: []
-    };
-
-    this.circles.set(circle_id, new_circle);
-    this._get_or_create_profile(caller);
-
-    near.log(`Circle ${circle_id} created by ${caller} with ${deposit.toString()} collateral staked.`);
-    return circle_id;
+function ensureProfileWritten(accountId: string): void {
+  const key = "rep:" + accountId;
+  if (storageRead(key, "").length == 0) {
+    storageWrite(key, "0|0|0|500|0");
   }
+}
 
-  @call({ payableFunction: true })
-  join_circle({ circle_id }: { circle_id: string }): void {
-    const caller = near.predecessorAccountId();
-    const deposit = near.attachedDeposit();
-    const circle = this.circles.get(circle_id);
+function updateProfile(
+  accountId: string,
+  addCompleted: i32,
+  addOnTime: i32,
+  addMissed: i32,
+  scoreDelta: i32,
+  addSlashedYocto: string
+): void {
+  const key = "rep:" + accountId;
+  const raw = storageRead(key, "0|0|0|500|0");
+  const parts = raw.split("|");
+  const completed = i32(I64.parseInt(parts[0])) + addCompleted;
+  const onTime = i32(I64.parseInt(parts[1])) + addOnTime;
+  const missed = i32(I64.parseInt(parts[2])) + addMissed;
+  let score = i32(I64.parseInt(parts[3])) + scoreDelta;
+  if (score > 1000) score = 1000;
+  if (score < 0) score = 0;
 
-    if (!circle) {
-      near.panicUtf8("Circle not found.");
+  const slashedBytes = u128Add(u128FromString(parts[4]), u128FromString(addSlashedYocto));
+  const slashedStr = u128ToString(slashedBytes);
+
+  storageWrite(
+    key,
+    completed.toString() + "|" +
+    onTime.toString() + "|" +
+    missed.toString() + "|" +
+    score.toString() + "|" +
+    slashedStr
+  );
+}
+
+// ------------------------------------------------------------
+// Circle Storage Serialization
+// Format of `c:<id>`:
+// 0:name | 1:creator | 2:contribution_amount | 3:collateral_per_member |
+// 4:round_duration_ms | 5:total_members | 6:members_csv | 7:payout_order_csv |
+// 8:current_round | 9:round_start_time | 10:round_deadline | 11:status |
+// 12:total_pot | 13:defaulted_csv | 14:paid_recipients_csv
+// ------------------------------------------------------------
+
+function buildCircleJson(circleId: string): string {
+  const raw = storageRead("c:" + circleId, "");
+  if (raw.length == 0) return "null";
+
+  const p = raw.split("|");
+  const name = p[0];
+  const creator = p[1];
+  const contribution = p[2];
+  const collateralPerMember = p[3];
+  const durationMs = p[4];
+  const totalMembers = i32(I64.parseInt(p[5]));
+  const members = splitCsv(p[6]);
+  const payoutOrder = splitCsv(p[7]);
+  const currentRound = i32(I64.parseInt(p[8]));
+  const startTime = p[9];
+  const deadline = p[10];
+  const status = p[11];
+  const totalPot = p[12];
+  const defaulted = splitCsv(p[13]);
+  const paidRecipients = splitCsv(p[14]);
+
+  // Build round_paid_members & payout_claimed
+  let roundPaidJson = "{";
+  let claimedJson = "{";
+  for (let r = 1; r <= totalMembers; r++) {
+    const rStr = r.toString();
+    const rPaidCsv = storageRead("cp:" + circleId + ":" + rStr, "");
+    const rClaimed = storageRead("cc:" + circleId + ":" + rStr, "0") == "1";
+    if (r > 1) {
+      roundPaidJson += ",";
+      claimedJson += ",";
     }
-    if (circle.status !== CircleStatus.Pending) {
-      near.panicUtf8("Circle is not accepting new members.");
-    }
-    if (circle.members.includes(caller)) {
-      near.panicUtf8("Already a member of this circle.");
-    }
-
-    const required_collateral = BigInt(circle.collateral_per_member);
-    if (deposit !== required_collateral) {
-      near.panicUtf8(`Exact collateral stake required to join: ${required_collateral.toString()} yoctoNEAR.`);
-    }
-
-    circle.members.push(caller);
-    circle.member_collateral[caller] = deposit.toString();
-    this._get_or_create_profile(caller);
-
-    // Auto-start when capacity reached
-    if (circle.members.length >= circle.total_members) {
-      circle.status = CircleStatus.Active;
-      circle.current_round = 1;
-
-      // Anti-exploit: Sort payout order by reputation score descending
-      // Members with proven track records get earlier slots; unproven get later slots
-      circle.payout_order = [...circle.members].sort((a, b) => {
-        const scoreA = this._get_score(a);
-        const scoreB = this._get_score(b);
-        return scoreB - scoreA;
-      });
-
-      const now = Number(near.blockTimestamp() / 1_000_000n);
-      circle.round_start_time = now;
-      circle.round_deadline = now + circle.round_duration_ms;
-      circle.round_paid_members[1] = [];
-
-      near.log(`Circle ${circle_id} is FULL and ACTIVE! Payout order: ${circle.payout_order.join(", ")}`);
-    }
-
-    this.circles.set(circle_id, circle);
+    roundPaidJson += '"' + rStr + '":' + jsonStringArray(splitCsv(rPaidCsv));
+    claimedJson += '"' + rStr + '":' + (rClaimed ? "true" : "false");
   }
+  roundPaidJson += "}";
+  claimedJson += "}";
 
-  @call({ payableFunction: true })
-  deposit({ circle_id }: { circle_id: string }): void {
-    const caller = near.predecessorAccountId();
-    const deposit_val = near.attachedDeposit();
-    const circle = this.circles.get(circle_id);
-
-    if (!circle) near.panicUtf8("Circle not found.");
-    if (circle.status !== CircleStatus.Active) near.panicUtf8("Circle is not active.");
-    if (!circle.members.includes(caller)) near.panicUtf8("You are not a member of this circle.");
-    if (circle.defaulted_members.includes(caller)) near.panicUtf8("Defaulters are banned from deposits.");
-
-    const required = BigInt(circle.contribution_amount);
-    if (deposit_val !== required) {
-      near.panicUtf8(`Exact round contribution required: ${required.toString()} yoctoNEAR.`);
-    }
-
-    const round = circle.current_round;
-    if (!circle.round_paid_members[round]) {
-      circle.round_paid_members[round] = [];
-    }
-
-    if (circle.round_paid_members[round].includes(caller)) {
-      near.panicUtf8("You have already deposited for this round.");
-    }
-
-    circle.round_paid_members[round].push(caller);
-    circle.total_pot = (BigInt(circle.total_pot) + deposit_val).toString();
-
-    // Reward on-time payment
-    this._reward_on_time(caller);
-
-    this.circles.set(circle_id, circle);
-    near.log(`Member ${caller} deposited for Round ${round} of Circle ${circle_id}.`);
+  // Build member_collateral
+  let colJson = "{";
+  for (let i = 0; i < members.length; i++) {
+    if (i > 0) colJson += ",";
+    const m = members[i];
+    const colVal = storageRead("col:" + circleId + ":" + m, "0");
+    colJson += '"' + m + '":"' + colVal + '"';
   }
+  colJson += "}";
 
-  // ----------------------------------------------------
-  // ANTI-DEFAULT & COLLATERAL SEIZURE ENGINE
-  // ----------------------------------------------------
+  return (
+    '{"id":"' + circleId +
+    '","name":"' + name +
+    '","creator":"' + creator +
+    '","contribution_amount":"' + contribution +
+    '","collateral_per_member":"' + collateralPerMember +
+    '","round_duration_ms":' + durationMs +
+    ',"total_members":' + totalMembers.toString() +
+    ',"members":' + jsonStringArray(members) +
+    ',"payout_order":' + jsonStringArray(payoutOrder) +
+    ',"current_round":' + currentRound.toString() +
+    ',"round_start_time":' + startTime +
+    ',"round_deadline":' + deadline +
+    ',"status":"' + status +
+    '","total_pot":"' + totalPot +
+    '","round_paid_members":' + roundPaidJson +
+    ',"payout_claimed":' + claimedJson +
+    ',"member_collateral":' + colJson +
+    ',"defaulted_members":' + jsonStringArray(defaulted) +
+    ',"paid_recipients":' + jsonStringArray(paidRecipients) + '}'
+  );
+}
 
-  @call({})
-  report_default({ circle_id, defaulter_id }: { circle_id: string; defaulter_id: AccountId }): void {
-    const circle = this.circles.get(circle_id);
-    if (!circle) near.panicUtf8("Circle not found.");
-    if (circle.status !== CircleStatus.Active) near.panicUtf8("Circle is not active.");
+// ------------------------------------------------------------
+// Exported Smart Contract Entrypoints
+// ------------------------------------------------------------
 
-    const now = Number(near.blockTimestamp() / 1_000_000n);
-    if (now <= circle.round_deadline) {
-      near.panicUtf8("Round deadline has not expired yet.");
-    }
+export function init(): void {
+  storageWrite("counter", "0");
+}
 
-    const round = circle.current_round;
-    const paid_members = circle.round_paid_members[round] || [];
-    if (paid_members.includes(defaulter_id)) {
-      near.panicUtf8("Specified member has already paid for this round.");
-    }
+export function create_circle(): void {
+  const input = getInputString();
+  const caller = predecessorAccountId();
+  const deposit = attachedDepositBytes();
 
-    if (!circle.members.includes(defaulter_id)) {
-      near.panicUtf8("Target is not a member of this circle.");
-    }
+  const name = getJsonString(input, "name");
+  const contributionStr = getJsonString(input, "contribution_amount");
+  const durationMs = getJsonNumber(input, "round_duration_ms", 0);
+  const totalMembers = i32(getJsonNumber(input, "total_members", 0));
 
-    // Seize collateral to fund the missing payment
-    const collateral = BigInt(circle.member_collateral[defaulter_id] || "0");
-    const required = BigInt(circle.contribution_amount);
+  assertCondition(name.length >= 2, "Circle name must be at least 2 characters.");
+  assertCondition(totalMembers >= 2 && totalMembers <= 20, "Circle must require between 2 and 20 members.");
+  assertCondition(durationMs >= 60000, "Round duration must be at least 60000 ms (1 minute).");
 
-    if (collateral < required) {
-      // Collateral already exhausted -> Circle cannot continue, terminate and refund
-      circle.status = CircleStatus.Terminated;
-      this.circles.set(circle_id, circle);
-      this._slash_reputation(defaulter_id, required.toString());
-      near.log(`Circle ${circle_id} TERMINATED due to unrecoverable default by ${defaulter_id}.`);
-      return;
-    }
+  const contributionBytes = u128FromString(contributionStr);
+  const minContributionBytes = u128FromString(MIN_CONTRIBUTION_YOCTO);
+  assertCondition(
+    u128Compare(contributionBytes, minContributionBytes) >= 0,
+    "Minimum contribution is 1 NEAR (10^24 yoctoNEAR) to prevent sybil farming."
+  );
 
-    // Deduct collateral and add to pot
-    circle.member_collateral[defaulter_id] = (collateral - required).toString();
-    circle.total_pot = (BigInt(circle.total_pot) + required).toString();
-    circle.round_paid_members[round].push(defaulter_id);
+  // Full anti-ghosting collateral: (total_members - 1) * contribution_amount
+  // Guarantees that even the Round 1 recipient cannot profit by taking the pot and ghosting remaining rounds!
+  const requiredCollateralBytes = u128MulSmall(contributionBytes, u32(totalMembers - 1));
+  const requiredCollateralStr = u128ToString(requiredCollateralBytes);
 
-    // Flag as defaulter and slash reputation
-    if (!circle.defaulted_members.includes(defaulter_id)) {
-      circle.defaulted_members.push(defaulter_id);
-    }
-    this._slash_reputation(defaulter_id, required.toString());
+  assertCondition(
+    u128Compare(deposit, requiredCollateralBytes) == 0,
+    "Exact collateral stake of (N-1)*contribution required: " + requiredCollateralStr + " yoctoNEAR."
+  );
 
-    this.circles.set(circle_id, circle);
-    near.log(`Default handled for ${defaulter_id}: Collateral seized for Round ${round} pot.`);
-  }
+  const count = I64.parseInt(storageRead("counter", "0")) + 1;
+  storageWrite("counter", count.toString());
+  const circleId = "circle_" + count.toString();
 
-  // ----------------------------------------------------
-  // PERMISSIONLESS CLAIM (KEEPER COMPATIBLE)
-  // ----------------------------------------------------
+  const record =
+    name + "|" +
+    caller + "|" +
+    contributionStr + "|" +
+    requiredCollateralStr + "|" +
+    durationMs.toString() + "|" +
+    totalMembers.toString() + "|" +
+    caller + "|" +
+    caller + "|" +
+    "0|0|0|Pending|0||";
 
-  @call({})
-  claim_payout({ circle_id }: { circle_id: string }): void {
-    const circle = this.circles.get(circle_id);
-    if (!circle) near.panicUtf8("Circle not found.");
-    if (circle.status !== CircleStatus.Active) near.panicUtf8("Circle is not active.");
+  storageWrite("c:" + circleId, record);
+  storageWrite("col:" + circleId + ":" + caller, requiredCollateralStr);
+  ensureProfileWritten(caller);
 
-    const round = circle.current_round;
-    if (circle.payout_claimed[round]) {
-      near.panicUtf8(`Payout for round ${round} already disbursed.`);
-    }
+  log("Circle " + circleId + " created by " + caller + " with collateral " + requiredCollateralStr);
+  valueReturn('"' + circleId + '"');
+}
 
-    const paid_members = circle.round_paid_members[round] || [];
-    const active_member_count = circle.total_members;
-    if (paid_members.length < active_member_count) {
-      near.panicUtf8(`Cannot disburse: only ${paid_members.length}/${active_member_count} deposits settled.`);
-    }
+export function join_circle(): void {
+  const input = getInputString();
+  const caller = predecessorAccountId();
+  const deposit = attachedDepositBytes();
+  const circleId = getJsonString(input, "circle_id");
 
-    // Determine recipient according to pre-sorted payout order
-    const recipient_index = round - 1;
-    let scheduled_recipient = circle.payout_order[recipient_index];
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
 
-    // If scheduled recipient has defaulted, advance pot to next non-defaulted member or split
-    if (circle.defaulted_members.includes(scheduled_recipient)) {
-      near.log(`Scheduled recipient ${scheduled_recipient} defaulted! Skipping payout.`);
-      // Pot rolls over or pays next honest member
-    }
+  const p = raw.split("|");
+  const status = p[11];
+  assertCondition(status == "Pending", "Circle is not accepting new members.");
 
-    const pot_to_pay = BigInt(circle.total_pot);
-    circle.payout_claimed[round] = true;
-    circle.total_pot = "0";
+  const members = splitCsv(p[6]);
+  assertCondition(!arrayContains(members, caller), "Already a member of this circle.");
 
-    // Transfer pot ONLY to scheduled recipient (Permissionless caller cannot steal funds)
-    const promise = near.promiseBatchCreate(scheduled_recipient);
-    near.promiseBatchActionTransfer(promise, pot_to_pay);
+  const requiredCollateralStr = p[3];
+  const requiredCollateralBytes = u128FromString(requiredCollateralStr);
+  assertCondition(
+    u128Compare(deposit, requiredCollateralBytes) == 0,
+    "Exact collateral stake required to join: " + requiredCollateralStr + " yoctoNEAR."
+  );
 
-    // Check if circle is complete
-    if (round >= circle.total_members) {
-      circle.status = CircleStatus.Completed;
+  members.push(caller);
+  storageWrite("col:" + circleId + ":" + caller, requiredCollateralStr);
+  ensureProfileWritten(caller);
 
-      // Refund collateral to all honest, non-defaulted members
-      for (const member of circle.members) {
-        if (!circle.defaulted_members.includes(member)) {
-          const refund_amt = BigInt(circle.member_collateral[member] || "0");
-          if (refund_amt > 0n) {
-            const refPromise = near.promiseBatchCreate(member);
-            near.promiseBatchActionTransfer(refPromise, refund_amt);
-          }
-          this._complete_circle(member);
+  const totalMembers = i32(I64.parseInt(p[5]));
+  const durationMs = u64(I64.parseInt(p[4]));
+
+  // Sort payout order by reputation score descending when full
+  const payoutOrder = new Array<string>();
+  for (let i = 0; i < members.length; i++) payoutOrder.push(members[i]);
+
+  if (members.length >= totalMembers) {
+    // Bubble sort descending by score
+    for (let i = 0; i < payoutOrder.length; i++) {
+      for (let j = i + 1; j < payoutOrder.length; j++) {
+        if (getScoreReadOnly(payoutOrder[j]) > getScoreReadOnly(payoutOrder[i])) {
+          const tmp = payoutOrder[i];
+          payoutOrder[i] = payoutOrder[j];
+          payoutOrder[j] = tmp;
         }
       }
-      near.log(`Circle ${circle_id} fully COMPLETED! All honest collaterals refunded.`);
-    } else {
-      // Advance to next round
-      circle.current_round = round + 1;
-      const now = Number(near.blockTimestamp() / 1_000_000n);
-      circle.round_start_time = now;
-      circle.round_deadline = now + circle.round_duration_ms;
-      circle.round_paid_members[circle.current_round] = [];
-      near.log(`Round ${round} disbursed to ${scheduled_recipient}. Round ${circle.current_round} begins.`);
+    }
+    p[8] = "1"; // current_round
+    const now = blockTimestampMs();
+    p[9] = now.toString();
+    p[10] = (now + durationMs).toString();
+    p[11] = "Active";
+    storageWrite("cp:" + circleId + ":1", "");
+    log("Circle " + circleId + " activated! Payout order: " + joinCsv(payoutOrder));
+  }
+
+  p[6] = joinCsv(members);
+  p[7] = joinCsv(payoutOrder);
+  storageWrite("c:" + circleId, p.join("|"));
+  valueReturn("true");
+}
+
+export function deposit(): void {
+  const input = getInputString();
+  const caller = predecessorAccountId();
+  const depositVal = attachedDepositBytes();
+  const circleId = getJsonString(input, "circle_id");
+
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
+
+  const p = raw.split("|");
+  assertCondition(p[11] == "Active", "Circle is not active.");
+
+  const members = splitCsv(p[6]);
+  assertCondition(arrayContains(members, caller), "You are not a member of this circle.");
+
+  const defaulted = splitCsv(p[13]);
+  assertCondition(!arrayContains(defaulted, caller), "Defaulters are banned from deposits.");
+
+  const requiredStr = p[2];
+  const requiredBytes = u128FromString(requiredStr);
+  assertCondition(
+    u128Compare(depositVal, requiredBytes) == 0,
+    "Exact round contribution required: " + requiredStr + " yoctoNEAR."
+  );
+
+  const roundStr = p[8];
+  const paidKey = "cp:" + circleId + ":" + roundStr;
+  const paidMembers = splitCsv(storageRead(paidKey, ""));
+  assertCondition(!arrayContains(paidMembers, caller), "Already contributed for this round.");
+
+  paidMembers.push(caller);
+  storageWrite(paidKey, joinCsv(paidMembers));
+
+  // Add to round pot
+  const newPotBytes = u128Add(u128FromString(p[12]), depositVal);
+  p[12] = u128ToString(newPotBytes);
+  storageWrite("c:" + circleId, p.join("|"));
+
+  // Check deadline: only reward +15 reputation if deposited before or at round_deadline and not defaulted
+  const now = blockTimestampMs();
+  const deadline = u64(I64.parseInt(p[10]));
+  if (now <= deadline && !arrayContains(defaulted, caller)) {
+    updateProfile(caller, 0, 1, 0, 15, "0");
+    log("On-time deposit confirmed for " + caller + " in Round " + roundStr + " (+15 Rep).");
+  } else {
+    log("Late deposit recorded for " + caller + " in Round " + roundStr + " (+0 Rep).");
+  }
+
+  valueReturn("true");
+}
+
+export function report_default(): void {
+  const input = getInputString();
+  const circleId = getJsonString(input, "circle_id");
+  const defaulterId = getJsonString(input, "defaulter_id");
+
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
+
+  const p = raw.split("|");
+  assertCondition(p[11] == "Active", "Circle is not active.");
+
+  const now = blockTimestampMs();
+  const deadline = u64(I64.parseInt(p[10]));
+  assertCondition(now > deadline, "Round deadline has not expired yet.");
+
+  const members = splitCsv(p[6]);
+  assertCondition(arrayContains(members, defaulterId), "Target is not a member of this circle.");
+
+  const roundStr = p[8];
+  const paidKey = "cp:" + circleId + ":" + roundStr;
+  const paidMembers = splitCsv(storageRead(paidKey, ""));
+  assertCondition(!arrayContains(paidMembers, defaulterId), "Member has already paid for this round.");
+
+  const defaulted = splitCsv(p[13]);
+  if (!arrayContains(defaulted, defaulterId)) {
+    defaulted.push(defaulterId);
+    p[13] = joinCsv(defaulted);
+  }
+
+  const requiredStr = p[2];
+  const requiredBytes = u128FromString(requiredStr);
+  const colKey = "col:" + circleId + ":" + defaulterId;
+  const currentColBytes = u128FromString(storageRead(colKey, "0"));
+
+  // Slash reputation (-150 pts)
+  updateProfile(defaulterId, 0, 0, 1, -150, requiredStr);
+
+  if (u128Compare(currentColBytes, requiredBytes) < 0) {
+    // Collateral exhausted -> transition to Terminated so honest members can call withdraw_on_termination
+    p[11] = "Terminated";
+    storageWrite("c:" + circleId, p.join("|"));
+    log("Circle " + circleId + " TERMINATED: defaulter " + defaulterId + " collateral exhausted.");
+    valueReturn('"Terminated"');
+    return;
+  }
+
+  // Seize 1 round of collateral to cover the pot
+  const remainingColBytes = u128Sub(currentColBytes, requiredBytes);
+  storageWrite(colKey, u128ToString(remainingColBytes));
+
+  const newPotBytes = u128Add(u128FromString(p[12]), requiredBytes);
+  p[12] = u128ToString(newPotBytes);
+
+  paidMembers.push(defaulterId);
+  storageWrite(paidKey, joinCsv(paidMembers));
+  storageWrite("c:" + circleId, p.join("|"));
+
+  log("Default resolved for " + defaulterId + ": seized " + requiredStr + " collateral for Round " + roundStr);
+  valueReturn('"Covered"');
+}
+
+export function claim_payout(): void {
+  const input = getInputString();
+  const circleId = getJsonString(input, "circle_id");
+
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
+
+  const p = raw.split("|");
+  assertCondition(p[11] == "Active", "Circle is not active.");
+
+  const totalMembers = i32(I64.parseInt(p[5]));
+  const round = i32(I64.parseInt(p[8]));
+  const roundStr = round.toString();
+
+  assertCondition(storageRead("cc:" + circleId + ":" + roundStr, "0") != "1", "Payout already claimed for this round.");
+
+  const paidMembers = splitCsv(storageRead("cp:" + circleId + ":" + roundStr, ""));
+  assertCondition(paidMembers.length >= totalMembers, "Cannot claim pot yet: incomplete round deposits.");
+
+  const payoutOrder = splitCsv(p[7]);
+  const defaulted = splitCsv(p[13]);
+  const paidRecipients = splitCsv(p[14]);
+
+  // Select recipient: first non-defaulted member in payoutOrder who hasn't been paid yet!
+  // Defaulters are NEVER paid the pot (fixes Bug B).
+  let recipient = "";
+  for (let i = 0; i < payoutOrder.length; i++) {
+    const candidate = payoutOrder[i];
+    if (!arrayContains(defaulted, candidate) && !arrayContains(paidRecipients, candidate)) {
+      recipient = candidate;
+      break;
+    }
+  }
+
+  // Fallback if all honest members already received their round pot (e.g. final round belonged to a defaulter):
+  // route to the first honest member
+  if (recipient.length == 0) {
+    for (let i = 0; i < payoutOrder.length; i++) {
+      if (!arrayContains(defaulted, payoutOrder[i])) {
+        recipient = payoutOrder[i];
+        break;
+      }
+    }
+  }
+  assertCondition(recipient.length > 0, "No honest recipient available.");
+
+  paidRecipients.push(recipient);
+  p[14] = joinCsv(paidRecipients);
+
+  const potBytes = u128FromString(p[12]);
+  p[12] = "0";
+  storageWrite("cc:" + circleId + ":" + roundStr, "1");
+
+  // Transfer pot to the honest recipient
+  transferNear(recipient, potBytes);
+
+  // Check if all non-defaulted members have received their lump-sum payout
+  const members = splitCsv(p[6]);
+  let allHonestPaid = true;
+  for (let i = 0; i < members.length; i++) {
+    const m = members[i];
+    if (!arrayContains(defaulted, m) && !arrayContains(paidRecipients, m)) {
+      allHonestPaid = false;
+      break;
+    }
+  }
+
+  // Complete circle if we reached totalMembers OR all honest members have received their lump-sum payout
+  if (round >= totalMembers || allHonestPaid) {
+    p[11] = "Completed";
+
+    // Sweep any leftover defaulter collateral
+    let bonusPoolBytes = u128FromString("0");
+    for (let i = 0; i < defaulted.length; i++) {
+      const defColKey = "col:" + circleId + ":" + defaulted[i];
+      const remCol = u128FromString(storageRead(defColKey, "0"));
+      if (!u128IsZero(remCol)) {
+        bonusPoolBytes = u128Add(bonusPoolBytes, remCol);
+        storageWrite(defColKey, "0");
+      }
     }
 
-    this.circles.set(circle_id, circle);
-  }
-
-  // ----------------------------------------------------
-  // VIEWS (STRICTLY READ-ONLY - ZERO STORAGE WRITES)
-  // ----------------------------------------------------
-
-  @view({})
-  get_reputation_profile({ account_id }: { account_id: AccountId }): ReputationProfile {
-    const existing = this.reputation.get(account_id);
-    if (existing) return existing;
-
-    // Pure memory return - NO storage write so view never panics
-    return {
-      account_id,
-      circles_completed: 0,
-      on_time_payments: 0,
-      missed_payments: 0,
-      reputation_score: 500,
-      tier: ReputationTier.Bronze,
-      collateral_slashed_total: "0"
-    };
-  }
-
-  @view({})
-  get_circle({ circle_id }: { circle_id: string }): Circle | null {
-    return this.circles.get(circle_id);
-  }
-
-  @view({})
-  get_circles({ from_index = 0, limit = 10 }: { from_index?: number; limit?: number }): Circle[] {
-    const list: Circle[] = [];
-    const count = Number(this.circle_counter);
-    const max_limit = Math.min(limit, 50);
-    const start = Math.max(1, from_index + 1);
-    const end = Math.min(count, start + max_limit - 1);
-
-    for (let i = start; i <= end; i++) {
-      const c = this.circles.get(`circle_${i}`);
-      if (c) list.push(c);
+    // Refund collateral to honest members and award +50 completion bonus
+    let firstHonest = true;
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      if (!arrayContains(defaulted, m)) {
+        const colKey = "col:" + circleId + ":" + m;
+        let refundBytes = u128FromString(storageRead(colKey, "0"));
+        if (firstHonest && !u128IsZero(bonusPoolBytes)) {
+          refundBytes = u128Add(refundBytes, bonusPoolBytes);
+          firstHonest = false;
+        }
+        if (!u128IsZero(refundBytes)) {
+          storageWrite(colKey, "0");
+          transferNear(m, refundBytes);
+        }
+        updateProfile(m, 1, 0, 0, 50, "0");
+      }
     }
-    return list;
+    log("Circle " + circleId + " COMPLETED! Honest collaterals refunded.");
+  } else {
+    const nextRound = round + 1;
+    p[8] = nextRound.toString();
+    const now = blockTimestampMs();
+    const durationMs = u64(I64.parseInt(p[4]));
+    p[9] = now.toString();
+    p[10] = (now + durationMs).toString();
+    storageWrite("cp:" + circleId + ":" + nextRound.toString(), "");
+    log("Round " + roundStr + " disbursed to " + recipient + ". Advancing to Round " + nextRound.toString());
   }
 
-  // ----------------------------------------------------
-  // INTERNAL REPUTATION HELPERS (CALL ONLY)
-  // ----------------------------------------------------
+  storageWrite("c:" + circleId, p.join("|"));
+  valueReturn('"' + recipient + '"');
+}
 
-  private _get_score(account_id: AccountId): number {
-    const p = this.reputation.get(account_id);
-    return p ? p.reputation_score : 500;
-  }
+export function withdraw_on_termination(): void {
+  const input = getInputString();
+  const circleId = getJsonString(input, "circle_id");
 
-  private _get_or_create_profile(account_id: AccountId): ReputationProfile {
-    let p = this.reputation.get(account_id);
-    if (!p) {
-      p = {
-        account_id,
-        circles_completed: 0,
-        on_time_payments: 0,
-        missed_payments: 0,
-        reputation_score: 500,
-        tier: ReputationTier.Bronze,
-        collateral_slashed_total: "0"
-      };
-      this.reputation.set(account_id, p);
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
+
+  const p = raw.split("|");
+  const status = p[11];
+  const members = splitCsv(p[6]);
+  const defaulted = splitCsv(p[13]);
+  const paidRecipients = splitCsv(p[14]);
+  const round = i32(I64.parseInt(p[8]));
+  const roundStr = p[8];
+  const paidKey = "cp:" + circleId + ":" + roundStr;
+  const paidThisRound = splitCsv(storageRead(paidKey, ""));
+  const totalMembers = i32(I64.parseInt(p[5]));
+  const contributionBytes = u128FromString(p[2]);
+
+  if (status == "Active") {
+    const now = blockTimestampMs();
+    const deadline = u64(I64.parseInt(p[10]));
+    assertCondition(
+      now > deadline && paidThisRound.length < totalMembers,
+      "Circle is Active and round deadline has not expired with missing payments."
+    );
+    // Mark members who missed the expired round as defaulted
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      if (!arrayContains(paidThisRound, m) && !arrayContains(defaulted, m)) {
+        defaulted.push(m);
+        updateProfile(m, 0, 0, 1, -150, p[2]);
+      }
     }
-    return p;
+    p[13] = joinCsv(defaulted);
+    p[11] = "Terminated";
+  } else {
+    assertCondition(status == "Terminated", "Circle is not in Terminated state.");
   }
 
-  private _reward_on_time(account_id: AccountId): void {
-    const p = this._get_or_create_profile(account_id);
-    p.on_time_payments += 1;
-    p.reputation_score = Math.min(1000, p.reputation_score + 15);
-    this._update_tier(p);
-    this.reputation.set(account_id, p);
+  // Seize remaining collateral of all defaulted members into a recovery pool
+  let recoveryPool = u128FromString("0");
+  for (let i = 0; i < defaulted.length; i++) {
+    const dKey = "col:" + circleId + ":" + defaulted[i];
+    const dCol = u128FromString(storageRead(dKey, "0"));
+    if (!u128IsZero(dCol)) {
+      recoveryPool = u128Add(recoveryPool, dCol);
+      storageWrite(dKey, "0");
+    }
   }
 
-  private _slash_reputation(account_id: AccountId, slashed_amount: string): void {
-    const p = this._get_or_create_profile(account_id);
-    p.missed_payments += 1;
-    p.reputation_score = Math.max(0, p.reputation_score - 150);
-    p.collateral_slashed_total = (BigInt(p.collateral_slashed_total) + BigInt(slashed_amount)).toString();
-    this._update_tier(p);
-    this.reputation.set(account_id, p);
+  // Refund every honest member's collateral + current-round deposit + prior-round contributions if unpaid
+  const priorRoundsCount = round > 1 ? u32(round - 1) : 0;
+  const priorContributionPerHonest = u128MulSmall(contributionBytes, priorRoundsCount);
+
+  for (let i = 0; i < members.length; i++) {
+    const m = members[i];
+    if (!arrayContains(defaulted, m)) {
+      const colKey = "col:" + circleId + ":" + m;
+      let refundBytes = u128FromString(storageRead(colKey, "0"));
+      storageWrite(colKey, "0");
+
+      if (arrayContains(paidThisRound, m)) {
+        refundBytes = u128Add(refundBytes, contributionBytes);
+      }
+
+      // If this honest member hasn't received a pot yet, compensate prior rounds from the recovery pool
+      if (!arrayContains(paidRecipients, m) && priorRoundsCount > 0) {
+        if (u128Compare(recoveryPool, priorContributionPerHonest) >= 0) {
+          refundBytes = u128Add(refundBytes, priorContributionPerHonest);
+          recoveryPool = u128Sub(recoveryPool, priorContributionPerHonest);
+        } else if (!u128IsZero(recoveryPool)) {
+          refundBytes = u128Add(refundBytes, recoveryPool);
+          recoveryPool = u128FromString("0");
+        }
+      }
+
+      if (!u128IsZero(refundBytes)) {
+        transferNear(m, refundBytes);
+      }
+    }
   }
 
-  private _complete_circle(account_id: AccountId): void {
-    const p = this._get_or_create_profile(account_id);
-    p.circles_completed += 1;
-    p.reputation_score = Math.min(1000, p.reputation_score + 50);
-    this._update_tier(p);
-    this.reputation.set(account_id, p);
-  }
+  // Clear current round paid list and pot so it cannot be withdrawn twice
+  storageWrite(paidKey, "");
+  p[12] = "0";
+  storageWrite("c:" + circleId, p.join("|"));
 
-  private _update_tier(p: ReputationProfile): void {
-    if (p.reputation_score >= 850) p.tier = ReputationTier.Platinum;
-    else if (p.reputation_score >= 700) p.tier = ReputationTier.Gold;
-    else if (p.reputation_score >= 550) p.tier = ReputationTier.Silver;
-    else p.tier = ReputationTier.Bronze;
+  log("Terminated circle " + circleId + " settled: all honest collaterals and deposits refunded.");
+  valueReturn("true");
+}
+
+// ------------------------------------------------------------
+// Read-Only View Methods (Zero Storage Writes)
+// ------------------------------------------------------------
+
+export function get_reputation_profile(): void {
+  const input = getInputString();
+  const accountId = getJsonString(input, "account_id");
+  valueReturn(getProfileJsonReadOnly(accountId));
+}
+
+export function get_circle(): void {
+  const input = getInputString();
+  const circleId = getJsonString(input, "circle_id");
+  valueReturn(buildCircleJson(circleId));
+}
+
+export function get_circles(): void {
+  const input = getInputString();
+  const fromIndex = i32(getJsonNumber(input, "from_index", 0));
+  let limit = i32(getJsonNumber(input, "limit", 10));
+  if (limit > 50) limit = 50;
+
+  const total = i32(I64.parseInt(storageRead("counter", "0")));
+  const start = fromIndex + 1;
+  let end = start + limit - 1;
+  if (end > total) end = total;
+
+  let out = "[";
+  let first = true;
+  for (let i = start; i <= end; i++) {
+    const cJson = buildCircleJson("circle_" + i.toString());
+    if (cJson != "null") {
+      if (!first) out += ",";
+      out += cJson;
+      first = false;
+    }
   }
+  out += "]";
+  valueReturn(out);
 }

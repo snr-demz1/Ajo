@@ -1,5 +1,13 @@
-// Orbit Protocol Contract Simulator & Test Harness
-// Mirrors contracts/src/index.ts for pure Node.js verification
+// Orbit Protocol WASM VM Execution Harness
+// Loads and executes the compiled `contracts/build/orbit_contract.wasm` directly in Node's WebAssembly VM,
+// providing NEAR Protocol host bindings (registers, storage, u128 deposits, promises, and view enforcement).
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WASM_PATH = path.resolve(__dirname, "../build/orbit_contract.wasm");
 
 export const CircleStatus = {
   Pending: "Pending",
@@ -15,15 +23,178 @@ export const ReputationTier = {
   Platinum: "Platinum"
 };
 
+function bigIntToLe16(val) {
+  let v = BigInt(val);
+  const out = new Uint8Array(16);
+  for (let i = 0; i < 16; i++) {
+    out[i] = Number(v & 0xffn);
+    v >>= 8n;
+  }
+  return out;
+}
+
+function le16ToBigInt(bytes) {
+  let v = 0n;
+  for (let i = 15; i >= 0; i--) {
+    v = (v << 8n) | BigInt(bytes[i]);
+  }
+  return v;
+}
+
 export class OrbitContractHarness {
   constructor() {
-    this.circles = new Map();
-    this.reputation = new Map();
-    this.circle_counter = 0n;
-    this.current_caller = "alice.near";
+    if (!fs.existsSync(WASM_PATH)) {
+      throw new Error(
+        `Compiled WASM binary not found at ${WASM_PATH}. Run 'npm --prefix contracts run build' first.`
+      );
+    }
+
+    this.wasmBytes = fs.readFileSync(WASM_PATH);
+    this.wasmModule = new WebAssembly.Module(this.wasmBytes);
+
+    this.storage = new Map();
+    this.registers = new Map();
+    this.promises = new Map();
+    this.nextPromiseId = 1n;
+
+    this.current_caller = "alice.testnet";
     this.current_deposit = 0n;
-    this.mock_time_ms = 1000000;
+    this.mock_time_ms = 1_700_000_000_000;
     this.transfers = [];
+    this.logs = [];
+    this._returnValue = null;
+    this._isView = false;
+
+    const env = {
+      input: (register_id) => {
+        this.registers.set(register_id, this._inputBytes || new Uint8Array(0));
+      },
+      read_register: (register_id, ptr) => {
+        const data = this.registers.get(register_id) || new Uint8Array(0);
+        const mem = new Uint8Array(this.instance.exports.memory.buffer, Number(ptr), data.length);
+        mem.set(data);
+      },
+      register_len: (register_id) => {
+        const data = this.registers.get(register_id);
+        return data ? BigInt(data.length) : 18446744073709551615n; // u64::MAX if not found
+      },
+      predecessor_account_id: (register_id) => {
+        this.registers.set(register_id, new TextEncoder().encode(this.current_caller));
+      },
+      attached_deposit: (balance_ptr) => {
+        const mem = new Uint8Array(this.instance.exports.memory.buffer, Number(balance_ptr), 16);
+        mem.set(bigIntToLe16(this.current_deposit));
+      },
+      block_timestamp: () => {
+        // NEAR block_timestamp is in nanoseconds (1 ms = 1,000,000 ns)
+        return BigInt(this.mock_time_ms) * 1_000_000n;
+      },
+      storage_write: (key_len, key_ptr, value_len, value_ptr, register_id) => {
+        if (this._isView) {
+          throw new Error("HostError(ProhibitedInView { method_name: \"storage_write\" })");
+        }
+        const keyBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(key_ptr), Number(key_len));
+        const valBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(value_ptr), Number(value_len));
+        const key = new TextDecoder().decode(keyBytes);
+        const existed = this.storage.has(key);
+        if (existed) {
+          this.registers.set(register_id, this.storage.get(key));
+        }
+        this.storage.set(key, new Uint8Array(valBytes));
+        return existed ? 1n : 0n;
+      },
+      storage_read: (key_len, key_ptr, register_id) => {
+        const keyBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(key_ptr), Number(key_len));
+        const key = new TextDecoder().decode(keyBytes);
+        if (!this.storage.has(key)) return 0n;
+        this.registers.set(register_id, this.storage.get(key));
+        return 1n;
+      },
+      storage_has_key: (key_len, key_ptr) => {
+        const keyBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(key_ptr), Number(key_len));
+        const key = new TextDecoder().decode(keyBytes);
+        return this.storage.has(key) ? 1n : 0n;
+      },
+      value_return: (value_len, value_ptr) => {
+        const valBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(value_ptr), Number(value_len));
+        this._returnValue = new TextDecoder().decode(valBytes);
+      },
+      log_utf8: (len, ptr) => {
+        const bytes = new Uint8Array(this.instance.exports.memory.buffer, Number(ptr), Number(len));
+        this.logs.push(new TextDecoder().decode(bytes));
+      },
+      panic_utf8: (len, ptr) => {
+        const bytes = new Uint8Array(this.instance.exports.memory.buffer, Number(ptr), Number(len));
+        const msg = new TextDecoder().decode(bytes);
+        throw new Error(`SmartContractPanic: ${msg}`);
+      },
+      promise_batch_create: (account_id_len, account_id_ptr) => {
+        if (this._isView) {
+          throw new Error("HostError(ProhibitedInView { method_name: \"promise_batch_create\" })");
+        }
+        const bytes = new Uint8Array(
+          this.instance.exports.memory.buffer,
+          Number(account_id_ptr),
+          Number(account_id_len)
+        );
+        const accountId = new TextDecoder().decode(bytes);
+        const idx = this.nextPromiseId++;
+        this.promises.set(idx, accountId);
+        return idx;
+      },
+      promise_batch_action_transfer: (promise_index, amount_ptr) => {
+        if (this._isView) {
+          throw new Error("HostError(ProhibitedInView { method_name: \"promise_batch_action_transfer\" })");
+        }
+        const to = this.promises.get(promise_index);
+        const amountBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(amount_ptr), 16);
+        const amount = le16ToBigInt(amountBytes);
+        this.transfers.push({
+          to,
+          amount,
+          triggered_by: this.current_caller
+        });
+      }
+    };
+
+    this._env = env;
+    this.instance = new WebAssembly.Instance(this.wasmModule, { env: this._env });
+    this._invoke("init", {}, false);
+
+    // Provide a convenient read-only Map-like view proxy over on-chain circle storage
+    this.circles = {
+      get: (circle_id) => this.getCircle({ circle_id })
+    };
+  }
+
+  _invoke(methodName, argsObj = {}, isView = false) {
+    this.instance = new WebAssembly.Instance(this.wasmModule, { env: this._env });
+    const fn = this.instance.exports[methodName];
+    if (typeof fn !== "function") {
+      throw new Error(`WASM export '${methodName}' not found.`);
+    }
+
+    // Snapshot state for atomic rollback on panic
+    const storageSnapshot = new Map(this.storage);
+    const transfersLen = this.transfers.length;
+    const prevIsView = this._isView;
+
+    this._isView = isView;
+    this._returnValue = null;
+    this._inputBytes = new TextEncoder().encode(JSON.stringify(argsObj));
+
+    try {
+      fn();
+      const raw = this._returnValue;
+      return raw !== null ? JSON.parse(raw) : null;
+    } catch (err) {
+      // Atomic rollback on panic
+      this.storage = storageSnapshot;
+      this.transfers.length = transfersLen;
+      throw err;
+    } finally {
+      this._isView = prevIsView;
+    }
   }
 
   setCaller(account_id, deposit = 0n) {
@@ -32,230 +203,72 @@ export class OrbitContractHarness {
   }
 
   advanceTime(ms) {
-    this.mock_time_ms += ms;
-  }
-
-  _getScore(accountId) {
-    const p = this.reputation.get(accountId);
-    return p ? p.reputation_score : 500;
-  }
-
-  _getOrCreateProfile(accountId) {
-    if (!this.reputation.has(accountId)) {
-      this.reputation.set(accountId, {
-        account_id: accountId,
-        circles_completed: 0,
-        on_time_payments: 0,
-        missed_payments: 0,
-        reputation_score: 500,
-        tier: ReputationTier.Bronze,
-        collateral_slashed_total: 0n
-      });
-    }
-    return this.reputation.get(accountId);
-  }
-
-  _updateTier(p) {
-    if (p.reputation_score >= 850) p.tier = ReputationTier.Platinum;
-    else if (p.reputation_score >= 700) p.tier = ReputationTier.Gold;
-    else if (p.reputation_score >= 550) p.tier = ReputationTier.Silver;
-    else p.tier = ReputationTier.Bronze;
+    this.mock_time_ms += Number(ms);
   }
 
   createCircle({ name, contribution_amount, round_duration_ms, total_members }) {
-    if (total_members < 2) throw new Error("Circle must require at least 2 members.");
-    const required_collateral = BigInt(contribution_amount);
-    if (this.current_deposit < required_collateral) {
-      throw new Error(`Creator must stake 1 round of collateral (${required_collateral}).`);
-    }
-
-    this.circle_counter += 1n;
-    const circle_id = `circle_${this.circle_counter.toString()}`;
-
-    const new_circle = {
-      id: circle_id,
-      name,
-      creator: this.current_caller,
-      contribution_amount: BigInt(contribution_amount),
-      collateral_per_member: BigInt(contribution_amount),
-      round_duration_ms,
-      total_members,
-      members: [this.current_caller],
-      payout_order: [this.current_caller],
-      current_round: 0,
-      round_start_time: 0,
-      round_deadline: 0,
-      status: CircleStatus.Pending,
-      total_pot: 0n,
-      round_paid_members: {},
-      payout_claimed: {},
-      member_collateral: { [this.current_caller]: this.current_deposit },
-      defaulted_members: []
-    };
-
-    this.circles.set(circle_id, new_circle);
-    this._getOrCreateProfile(this.current_caller);
-    return circle_id;
+    return this._invoke(
+      "create_circle",
+      {
+        name,
+        contribution_amount: BigInt(contribution_amount).toString(),
+        round_duration_ms: Number(round_duration_ms),
+        total_members: Number(total_members)
+      },
+      false
+    );
   }
 
   joinCircle({ circle_id }) {
-    const circle = this.circles.get(circle_id);
-    if (!circle) throw new Error("Circle not found.");
-    if (circle.status !== CircleStatus.Pending) throw new Error("Circle is not accepting new members.");
-    if (circle.members.includes(this.current_caller)) throw new Error("Already a member of this circle.");
-
-    if (this.current_deposit !== circle.collateral_per_member) {
-      throw new Error(`Exact collateral stake required to join: ${circle.collateral_per_member}.`);
-    }
-
-    circle.members.push(this.current_caller);
-    circle.member_collateral[this.current_caller] = this.current_deposit;
-    this._getOrCreateProfile(this.current_caller);
-
-    // Auto-activate when full
-    if (circle.members.length >= circle.total_members) {
-      circle.status = CircleStatus.Active;
-      circle.current_round = 1;
-
-      // Payout order sorted by reputation score descending
-      circle.payout_order = [...circle.members].sort((a, b) => this._getScore(b) - this._getScore(a));
-
-      circle.round_start_time = this.mock_time_ms;
-      circle.round_deadline = this.mock_time_ms + circle.round_duration_ms;
-      circle.round_paid_members[1] = [];
-    }
+    return this._invoke("join_circle", { circle_id }, false);
   }
 
   deposit({ circle_id }) {
-    const circle = this.circles.get(circle_id);
-    if (!circle) throw new Error("Circle not found.");
-    if (circle.status !== CircleStatus.Active) throw new Error("Circle is not active.");
-    if (!circle.members.includes(this.current_caller)) throw new Error("You are not a member of this circle.");
-    if (circle.defaulted_members.includes(this.current_caller)) throw new Error("Defaulters are banned from deposits.");
-
-    if (this.current_deposit !== circle.contribution_amount) {
-      throw new Error(`Exact round contribution required: ${circle.contribution_amount}.`);
-    }
-
-    const round = circle.current_round;
-    if (!circle.round_paid_members[round]) {
-      circle.round_paid_members[round] = [];
-    }
-
-    if (circle.round_paid_members[round].includes(this.current_caller)) {
-      throw new Error("Already contributed for this round.");
-    }
-
-    circle.round_paid_members[round].push(this.current_caller);
-    circle.total_pot += this.current_deposit;
-
-    // Reward on-time payment
-    const profile = this._getOrCreateProfile(this.current_caller);
-    profile.on_time_payments += 1;
-    profile.reputation_score = Math.min(1000, profile.reputation_score + 15);
-    this._updateTier(profile);
+    return this._invoke("deposit", { circle_id }, false);
   }
 
   reportDefault({ circle_id, defaulter_id }) {
-    const circle = this.circles.get(circle_id);
-    if (!circle) throw new Error("Circle not found.");
-    if (circle.status !== CircleStatus.Active) throw new Error("Circle is not active.");
-
-    if (this.mock_time_ms <= circle.round_deadline) {
-      throw new Error("Round deadline has not expired yet.");
-    }
-
-    const round = circle.current_round;
-    const paid = circle.round_paid_members[round] || [];
-    if (paid.includes(defaulter_id)) throw new Error("Member has already paid for this round.");
-
-    const collateral = circle.member_collateral[defaulter_id] || 0n;
-    if (collateral < circle.contribution_amount) {
-      circle.status = CircleStatus.Terminated;
-      throw new Error("Collateral exhausted. Circle terminated.");
-    }
-
-    // Seize collateral to fund the round pot
-    circle.member_collateral[defaulter_id] = collateral - circle.contribution_amount;
-    circle.total_pot += circle.contribution_amount;
-    circle.round_paid_members[round].push(defaulter_id);
-
-    if (!circle.defaulted_members.includes(defaulter_id)) {
-      circle.defaulted_members.push(defaulter_id);
-    }
-
-    // Slash reputation
-    const p = this._getOrCreateProfile(defaulter_id);
-    p.missed_payments += 1;
-    p.reputation_score = Math.max(0, p.reputation_score - 150);
-    p.collateral_slashed_total += circle.contribution_amount;
-    this._updateTier(p);
+    return this._invoke("report_default", { circle_id, defaulter_id }, false);
   }
 
-  // Permissionless claim: any caller / keeper can execute, pot only goes to scheduled_recipient
   claimPayout({ circle_id }) {
-    const circle = this.circles.get(circle_id);
-    if (!circle) throw new Error("Circle not found.");
-    if (circle.status !== CircleStatus.Active) throw new Error("Circle is not active.");
-
-    const round = circle.current_round;
-    if (circle.payout_claimed[round]) throw new Error(`Payout for round ${round} already claimed.`);
-
-    const paid = circle.round_paid_members[round] || [];
-    if (paid.length < circle.total_members) {
-      throw new Error(`Cannot claim pot yet: only ${paid.length}/${circle.total_members} paid.`);
-    }
-
-    const scheduled_recipient = circle.payout_order[round - 1];
-    const pot_to_pay = circle.total_pot;
-    circle.payout_claimed[round] = true;
-    circle.total_pot = 0n;
-
-    this.transfers.push({
-      to: scheduled_recipient,
-      amount: pot_to_pay,
-      round: round,
-      triggered_by: this.current_caller
-    });
-
-    if (round >= circle.total_members) {
-      circle.status = CircleStatus.Completed;
-      for (const member of circle.members) {
-        if (!circle.defaulted_members.includes(member)) {
-          const refund = circle.member_collateral[member] || 0n;
-          if (refund > 0n) {
-            this.transfers.push({
-              to: member,
-              amount: refund,
-              type: "collateral_refund"
-            });
-          }
-          const p = this._getOrCreateProfile(member);
-          p.circles_completed += 1;
-          p.reputation_score = Math.min(1000, p.reputation_score + 50);
-          this._updateTier(p);
-        }
-      }
-    } else {
-      circle.current_round = round + 1;
-      circle.round_start_time = this.mock_time_ms;
-      circle.round_deadline = this.mock_time_ms + circle.round_duration_ms;
-      circle.round_paid_members[circle.current_round] = [];
-    }
+    return this._invoke("claim_payout", { circle_id }, false);
   }
 
-  // Strictly read-only view: never writes to storage!
+  withdrawOnTermination({ circle_id }) {
+    return this._invoke("withdraw_on_termination", { circle_id }, false);
+  }
+
   getReputationProfile({ account_id }) {
-    const existing = this.reputation.get(account_id);
-    if (existing) return existing;
+    const res = this._invoke("get_reputation_profile", { account_id }, true);
     return {
-      account_id,
-      circles_completed: 0,
-      on_time_payments: 0,
-      missed_payments: 0,
-      reputation_score: 500,
-      tier: ReputationTier.Bronze,
-      collateral_slashed_total: 0n
+      ...res,
+      collateral_slashed_total: BigInt(res.collateral_slashed_total)
+    };
+  }
+
+  getCircle({ circle_id }) {
+    const raw = this._invoke("get_circle", { circle_id }, true);
+    if (!raw) return null;
+    return this._hydrateCircle(raw);
+  }
+
+  getCircles({ from_index = 0, limit = 10 } = {}) {
+    const list = this._invoke("get_circles", { from_index, limit }, true);
+    return (list || []).map((c) => this._hydrateCircle(c));
+  }
+
+  _hydrateCircle(c) {
+    const member_collateral = {};
+    for (const [k, v] of Object.entries(c.member_collateral || {})) {
+      member_collateral[k] = BigInt(v);
+    }
+    return {
+      ...c,
+      contribution_amount: BigInt(c.contribution_amount),
+      collateral_per_member: BigInt(c.collateral_per_member),
+      total_pot: BigInt(c.total_pot),
+      member_collateral
     };
   }
 }

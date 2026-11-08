@@ -1,0 +1,45 @@
+{
+  "network": "testnet",
+  "rpc_url": "https://rpc.testnet.near.org",
+  "contract_id": "orbit-v2-24284.testnet",
+  "explorer_account_url": "https://testnet.nearblocks.io/address/orbit-v2-24284.testnet",
+  "deployed_at": "2026-11-08T21:33:00Z",
+  "participants": {
+    "alice": "alice-orbit-24284.testnet",
+    "bob": "bob-orbit-24284.testnet"
+  },
+  "transactions": {
+    "deploy_wasm": {
+      "hash": "9mqN3WgAmWPvB4yoKv4zrSSwoThLQJQivLJ1wL48hwHa",
+      "explorer_url": "https://testnet.nearblocks.io/txns/9mqN3WgAmWPvB4yoKv4zrSSwoThLQJQivLJ1wL48hwHa"
+    },
+    "init": {
+      "hash": "D8iyHkJm6ED2pa7Wxe8WFAH2HMNQd1WLiCFVQ4Hmr81x",
+      "explorer_url": "https://testnet.nearblocks.io/txns/D8iyHkJm6ED2pa7Wxe8WFAH2HMNQd1WLiCFVQ4Hmr81x"
+    },
+    "create_circle_1": {
+      "hash": "DtVYTcghwo95ueTyt2Q5jdNvZJF335n1P7e7ZS56afZk",
+      "explorer_url": "https://testnet.nearblocks.io/txns/DtVYTcghwo95ueTyt2Q5jdNvZJF335n1P7e7ZS56afZk"
+    },
+    "join_circle_1": {
+      "hash": "AmgiCRMkrkYhorDnzsSWtkuac8R7ha3QRvnQ1LwMqhmm",
+      "explorer_url": "https://testnet.nearblocks.io/txns/AmgiCRMkrkYhorDnzsSWtkuac8R7ha3QRvnQ1LwMqhmm"
+    },
+    "deposit_circle_1_alice": {
+      "hash": "5n3qnU7YqV8PxNJXmQ8xRfT8i5kHcje3NZ3D5XWYEjHb",
+      "explorer_url": "https://testnet.nearblocks.io/txns/5n3qnU7YqV8PxNJXmQ8xRfT8i5kHcje3NZ3D5XWYEjHb"
+    },
+    "deposit_circle_1_bob": {
+      "hash": "AghauNdkYTHRpbzNBzRT9sNuoNK2fhiEa4TSCLZaG5dv",
+      "explorer_url": "https://testnet.nearblocks.io/txns/AghauNdkYTHRpbzNBzRT9sNuoNK2fhiEa4TSCLZaG5dv"
+    },
+    "claim_payout_circle_1_round_1": {
+      "hash": "4vyRWpemEeAmQxk2vwe2pwcgFdFRBt5wGtnbTW6hurUA",
+      "explorer_url": "https://testnet.nearblocks.io/txns/4vyRWpemEeAmQxk2vwe2pwcgFdFRBt5wGtnbTW6hurUA"
+    },
+    "deposit_circle_2_alice": {
+      "hash": "ATjhqPzVrL1Fa6DGd5HWwpztW2EbZqj6wmYs6Fc7ytQt",
+      "explorer_url": "https://testnet.nearblocks.io/txns/ATjhqPzVrL1Fa6DGd5HWwpztW2EbZqj6wmYs6Fc7ytQt"
+    }
+  }
+}

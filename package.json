@@ -22,5 +22,10 @@
     "soulbound-nft"
   ],
   "author": "Orbit Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "assemblyscript": "^0.28.20",
+    "near-api-js": "^7.4.0",
+    "wabt": "^1.0.39"
+  }
 }

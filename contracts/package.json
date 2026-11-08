@@ -1,16 +1,13 @@
 {
   "name": "orbit-protocol-contracts",
-  "version": "0.1.0",
-  "description": "Smart contracts for Orbit: Rotating Savings Circles with Soulbound Reputation Passes",
+  "version": "1.0.0",
+  "description": "Smart contracts for Orbit: Rotating Savings Circles with Soulbound Reputation Passes on NEAR Protocol",
   "main": "build/orbit_contract.wasm",
   "scripts": {
-    "build": "near-sdk-js build src/index.ts build/orbit_contract.wasm",
-    "test": "node --test"
+    "build": "asc src/index.ts -o build/orbit_contract.wasm -O3 --runtime stub --use abort=src/near_runtime/customAbort --disable bulk-memory --disable sign-extension --disable nontrapping-f2i",
+    "test": "node --test test/orbit_test.mjs"
   },
   "dependencies": {
-    "near-sdk-js": "^2.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.4.0"
+    "assemblyscript": "^0.28.20"
   }
 }
