@@ -235,6 +235,14 @@ export class OrbitContractHarness {
     return this._invoke("claim_payout", { circle_id }, false);
   }
 
+  init() {
+    return this._invoke("init", {}, false);
+  }
+
+  cancelPendingCircle({ circle_id }) {
+    return this._invoke("cancel_pending_circle", { circle_id }, false);
+  }
+
   withdrawOnTermination({ circle_id }) {
     return this._invoke("withdraw_on_termination", { circle_id }, false);
   }

@@ -386,4 +386,112 @@ describe("Orbit Protocol: Compiled WASM Smart Contract & Security Invariants", (
     assert.equal(aliceProfile.on_time_payments, 0);
   });
 
+  it("10. [Exploit E1] Blocks pipe (|) delimiter injection in circle name from forging state or draining escrow", () => {
+    const contract = new OrbitContractHarness();
+
+    contract.setCaller("attacker.testnet", ONE_NEAR);
+    assert.throws(
+      () =>
+        contract.createCircle({
+          name: "xx|attacker.testnet|1|0|60000|0|attacker.testnet|attacker.testnet|1|0|0|Active|120000000000000000000000000||",
+          contribution_amount: ONE_NEAR.toString(),
+          round_duration_ms: 60000,
+          total_members: 2
+        }),
+      /Circle name must be 2-64 safe characters/
+    );
+  });
+
+  it("11. [Exploit E2] Guards init() against re-initialization so griefers cannot reset counter or overwrite circles", () => {
+    const contract = new OrbitContractHarness();
+
+    contract.setCaller("alice.near", TEN_NEAR);
+    const circleId = contract.createCircle({
+      name: "Protected Circle",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+    assert.equal(circleId, "circle_1");
+
+    // Griefer attempts to call init() to reset counter
+    contract.setCaller("griefer.testnet", 0n);
+    assert.throws(() => contract.init(), /Contract is already initialized/);
+
+    // Original circle_1 remains intact
+    const circle = contract.getCircle({ circle_id: "circle_1" });
+    assert.equal(circle.name, "Protected Circle");
+    assert.equal(circle.creator, "alice.near");
+  });
+
+  it("12. [Exploit E3] Rejects quotes, backslashes, and control characters so get_circles JSON never breaks", () => {
+    const contract = new OrbitContractHarness();
+
+    contract.setCaller("alice.near", ONE_NEAR);
+    assert.throws(
+      () =>
+        contract.createCircle({
+          name: 'Bad "Quote" Circle',
+          contribution_amount: ONE_NEAR.toString(),
+          round_duration_ms: 60000,
+          total_members: 2
+        }),
+      /Circle name must be 2-64 safe characters/
+    );
+
+    assert.throws(
+      () =>
+        contract.createCircle({
+          name: "Bad \\Backslash Circle",
+          contribution_amount: ONE_NEAR.toString(),
+          round_duration_ms: 60000,
+          total_members: 2
+        }),
+      /Circle name must be 2-64 safe characters/
+    );
+
+    // Valid circle works and getCircles() returns valid parsed objects
+    contract.createCircle({
+      name: "Clean Circle #1",
+      contribution_amount: ONE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+    const list = contract.getCircles({ from_index: 0, limit: 10 });
+    assert.equal(list.length, 1);
+    assert.equal(list[0].name, "Clean Circle #1");
+  });
+
+  it("13. [Exploit E4] Allows cancelling a Pending circle to refund 100% of staked collateral (and blocks non-member griefers)", () => {
+    const contract = new OrbitContractHarness();
+    // 20-member, 10-NEAR circle requires 19 * 10 = 190 NEAR collateral
+    const collateral190 = 19n * TEN_NEAR;
+
+    contract.setCaller("alice.near", collateral190);
+    const circle_id = contract.createCircle({
+      name: "Large 20 Member Circle",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 86400000,
+      total_members: 20
+    });
+
+    // Random non-member griefer cannot cancel Alice's pending circle
+    contract.setCaller("griefer.near", 0n);
+    assert.throws(() => contract.cancelPendingCircle({ circle_id }), /Only a member of this pending circle can cancel it/);
+
+    // Alice (creator/member) cancels the pending circle via cancel_pending_circle (or withdraw_on_termination)
+    contract.setCaller("alice.near", 0n);
+    contract.cancelPendingCircle({ circle_id });
+
+    const circle = contract.getCircle({ circle_id });
+    assert.equal(circle.status, CircleStatus.Terminated);
+    assert.equal(circle.member_collateral["alice.near"], 0n);
+
+    // Verify Alice received all 190 NEAR back
+    const aliceRefund = contract.transfers
+      .filter((t) => t.to === "alice.near")
+      .reduce((acc, t) => acc + t.amount, 0n);
+    assert.equal(aliceRefund, collateral190);
+  });
+
 });

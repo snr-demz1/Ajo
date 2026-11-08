@@ -246,9 +246,25 @@ export function getJsonString(json: string, key: string): string {
   if (colonIdx == -1) return "";
   const firstQuote = json.indexOf('"', colonIdx + 1);
   if (firstQuote == -1) return "";
-  const secondQuote = json.indexOf('"', firstQuote + 1);
-  if (secondQuote == -1) return "";
-  return json.substring(firstQuote + 1, secondQuote);
+  let out = "";
+  let i = firstQuote + 1;
+  while (i < json.length) {
+    const c = json.charCodeAt(i);
+    if (c == 92) {
+      out += "\\";
+      if (i + 1 < json.length) {
+        out += String.fromCharCode(json.charCodeAt(i + 1));
+        i += 2;
+        continue;
+      }
+    }
+    if (c == 34) {
+      return out;
+    }
+    out += String.fromCharCode(c);
+    i++;
+  }
+  return out;
 }
 
 export function getJsonNumber(json: string, key: string, defaultVal: i64 = 0): i64 {

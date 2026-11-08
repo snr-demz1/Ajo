@@ -7,6 +7,7 @@ import {
   assertCondition,
   valueReturn,
   storageRead,
+  storageHasKey,
   storageWrite,
   transferNear,
   u128FromString,
@@ -58,6 +59,46 @@ function jsonStringArray(arr: Array<string>): string {
     out += '"' + arr[i] + '"';
   }
   return out + "]";
+}
+
+// Strict input sanitization to prevent pipe ('|'), quote ('"'), backslash ('\\'), comma (','), and control-char injection
+function isSafeText(s: string): bool {
+  if (s.length < 2 || s.length > 64) return false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    const isUpper = c >= 65 && c <= 90;
+    const isLower = c >= 97 && c <= 122;
+    const isDigit = c >= 48 && c <= 57;
+    const isAllowedPunct = c == 32 || c == 95 || c == 45 || c == 35 || c == 46; // space, _, -, #, .
+    if (!isUpper && !isLower && !isDigit && !isAllowedPunct) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isSafeIdentifier(s: string): bool {
+  if (s.length < 2 || s.length > 64) return false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    const isUpper = c >= 65 && c <= 90;
+    const isLower = c >= 97 && c <= 122;
+    const isDigit = c >= 48 && c <= 57;
+    const isAllowedPunct = c == 95 || c == 45 || c == 46; // _, -, .
+    if (!isUpper && !isLower && !isDigit && !isAllowedPunct) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isSafeDigits(s: string): bool {
+  if (s.length < 1 || s.length > 39) return false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
 }
 
 // ------------------------------------------------------------
@@ -223,6 +264,7 @@ function buildCircleJson(circleId: string): string {
 // ------------------------------------------------------------
 
 export function init(): void {
+  assertCondition(!storageHasKey("counter"), "Contract is already initialized.");
   storageWrite("counter", "0");
 }
 
@@ -236,7 +278,12 @@ export function create_circle(): void {
   const durationMs = getJsonNumber(input, "round_duration_ms", 0);
   const totalMembers = i32(getJsonNumber(input, "total_members", 0));
 
-  assertCondition(name.length >= 2, "Circle name must be at least 2 characters.");
+  assertCondition(isSafeIdentifier(caller), "Invalid caller account ID.");
+  assertCondition(
+    isSafeText(name),
+    "Circle name must be 2-64 safe characters (letters, numbers, spaces, -_#.) without pipes, quotes, or backslashes."
+  );
+  assertCondition(isSafeDigits(contributionStr), "Contribution amount must be a valid integer string.");
   assertCondition(totalMembers >= 2 && totalMembers <= 20, "Circle must require between 2 and 20 members.");
   assertCondition(durationMs >= 60000, "Round duration must be at least 60000 ms (1 minute).");
 
@@ -285,6 +332,9 @@ export function join_circle(): void {
   const caller = predecessorAccountId();
   const deposit = attachedDepositBytes();
   const circleId = getJsonString(input, "circle_id");
+
+  assertCondition(isSafeIdentifier(caller), "Invalid caller account ID.");
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
 
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
@@ -346,6 +396,9 @@ export function deposit(): void {
   const depositVal = attachedDepositBytes();
   const circleId = getJsonString(input, "circle_id");
 
+  assertCondition(isSafeIdentifier(caller), "Invalid caller account ID.");
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
+
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
 
@@ -395,6 +448,9 @@ export function report_default(): void {
   const input = getInputString();
   const circleId = getJsonString(input, "circle_id");
   const defaulterId = getJsonString(input, "defaulter_id");
+
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
+  assertCondition(isSafeIdentifier(defaulterId), "Invalid defaulter_id format.");
 
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
@@ -455,6 +511,8 @@ export function report_default(): void {
 export function claim_payout(): void {
   const input = getInputString();
   const circleId = getJsonString(input, "circle_id");
+
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
 
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
@@ -568,9 +626,46 @@ export function claim_payout(): void {
   valueReturn('"' + recipient + '"');
 }
 
+export function cancel_pending_circle(): void {
+  const input = getInputString();
+  const caller = predecessorAccountId();
+  const circleId = getJsonString(input, "circle_id");
+
+  assertCondition(isSafeIdentifier(caller), "Invalid caller account ID.");
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
+
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
+
+  const p = raw.split("|");
+  assertCondition(p[11] == "Pending", "Only Pending circles can be cancelled via cancel_pending_circle.");
+
+  const members = splitCsv(p[6]);
+  assertCondition(arrayContains(members, caller), "Only a member of this pending circle can cancel it.");
+
+  for (let i = 0; i < members.length; i++) {
+    const m = members[i];
+    const colKey = "col:" + circleId + ":" + m;
+    const refundBytes = u128FromString(storageRead(colKey, "0"));
+    storageWrite(colKey, "0");
+    if (!u128IsZero(refundBytes)) {
+      transferNear(m, refundBytes);
+    }
+  }
+
+  p[11] = "Terminated";
+  storageWrite("c:" + circleId, p.join("|"));
+  log("Pending circle " + circleId + " cancelled by " + caller + ": all staked collaterals refunded.");
+  valueReturn("true");
+}
+
 export function withdraw_on_termination(): void {
   const input = getInputString();
+  const caller = predecessorAccountId();
   const circleId = getJsonString(input, "circle_id");
+
+  assertCondition(isSafeIdentifier(caller), "Invalid caller account ID.");
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
 
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
@@ -578,6 +673,26 @@ export function withdraw_on_termination(): void {
   const p = raw.split("|");
   const status = p[11];
   const members = splitCsv(p[6]);
+
+  // If the circle is still Pending and a joined member calls withdraw_on_termination, cancel & refund all members
+  if (status == "Pending") {
+    assertCondition(arrayContains(members, caller), "Only a member of this pending circle can cancel it.");
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      const colKey = "col:" + circleId + ":" + m;
+      const refundBytes = u128FromString(storageRead(colKey, "0"));
+      storageWrite(colKey, "0");
+      if (!u128IsZero(refundBytes)) {
+        transferNear(m, refundBytes);
+      }
+    }
+    p[11] = "Terminated";
+    storageWrite("c:" + circleId, p.join("|"));
+    log("Pending circle " + circleId + " terminated by " + caller + ": all staked collaterals refunded.");
+    valueReturn("true");
+    return;
+  }
+
   const defaulted = splitCsv(p[13]);
   const paidRecipients = splitCsv(p[14]);
   const round = i32(I64.parseInt(p[8]));
@@ -667,12 +782,14 @@ export function withdraw_on_termination(): void {
 export function get_reputation_profile(): void {
   const input = getInputString();
   const accountId = getJsonString(input, "account_id");
+  assertCondition(isSafeIdentifier(accountId), "Invalid account_id format.");
   valueReturn(getProfileJsonReadOnly(accountId));
 }
 
 export function get_circle(): void {
   const input = getInputString();
   const circleId = getJsonString(input, "circle_id");
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
   valueReturn(buildCircleJson(circleId));
 }
 
