@@ -462,7 +462,7 @@ describe("Orbit Protocol: Compiled WASM Smart Contract & Security Invariants", (
     assert.equal(list[0].name, "Clean Circle #1");
   });
 
-  it("13. [Exploit E4] Allows cancelling a Pending circle to refund 100% of staked collateral (and blocks non-member griefers)", () => {
+  it("13. [Exploit E4 & G1 Defense] Allows creator to cancel Pending circle with 100% refund, blocks non-creator cancellation", () => {
     const contract = new OrbitContractHarness();
     // 20-member, 10-NEAR circle requires 19 * 10 = 190 NEAR collateral
     const collateral190 = 19n * TEN_NEAR;
@@ -475,23 +475,90 @@ describe("Orbit Protocol: Compiled WASM Smart Contract & Security Invariants", (
       total_members: 20
     });
 
-    // Random non-member griefer cannot cancel Alice's pending circle
+    // Random non-creator griefer cannot cancel Alice's pending circle
     contract.setCaller("griefer.near", 0n);
-    assert.throws(() => contract.cancelPendingCircle({ circle_id }), /Only a member of this pending circle can cancel it/);
+    assert.throws(() => contract.cancelPendingCircle({ circle_id }), /Only the circle creator can cancel a pending circle/);
 
-    // Alice (creator/member) cancels the pending circle via cancel_pending_circle (or withdraw_on_termination)
+    // Alice (creator) cancels the pending circle via cancel_pending_circle
     contract.setCaller("alice.near", 0n);
     contract.cancelPendingCircle({ circle_id });
 
     const circle = contract.getCircle({ circle_id });
     assert.equal(circle.status, CircleStatus.Terminated);
-    assert.equal(circle.member_collateral["alice.near"], 0n);
+    assert.equal(circle.member_collateral["alice.near"] ?? 0n, 0n);
 
     // Verify Alice received all 190 NEAR back
     const aliceRefund = contract.transfers
       .filter((t) => t.to === "alice.near")
       .reduce((acc, t) => acc + t.amount, 0n);
     assert.equal(aliceRefund, collateral190);
+  });
+
+  it("14. [G1 Cancel Griefing Defense] Non-creator member calls leave_pending_circle to exit without destroying circle", () => {
+    const contract = new OrbitContractHarness();
+    // 3-member circle: 2 * 10 = 20 NEAR collateral each
+    const collateral20 = 2n * TEN_NEAR;
+
+    contract.setCaller("alice.near", collateral20);
+    const circle_id = contract.createCircle({
+      name: "Community Savings Club",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 86400000,
+      total_members: 3
+    });
+
+    // Bob joins
+    contract.setCaller("bob.near", collateral20);
+    contract.joinCircle({ circle_id });
+
+    // Bob attempts to cancel whole circle -> BLOCKED (only creator can cancel)
+    assert.throws(
+      () => contract.cancelPendingCircle({ circle_id }),
+      /Only the circle creator can cancel a pending circle/
+    );
+
+    // Bob calls leave_pending_circle: Bob exits and recovers his 20 NEAR, circle stays Pending!
+    const beforeTransfers = contract.transfers.length;
+    contract.leavePendingCircle({ circle_id });
+
+    const bobRefund = contract.transfers
+      .slice(beforeTransfers)
+      .filter((t) => t.to === "bob.near")
+      .reduce((acc, t) => acc + t.amount, 0n);
+    assert.equal(bobRefund, collateral20);
+
+    // Circle remains Pending and open for new members; Alice's collateral remains safe
+    const circle = contract.getCircle({ circle_id });
+    assert.equal(circle.status, CircleStatus.Pending);
+    assert.equal(circle.members.length, 1);
+    assert.deepEqual(circle.members, ["alice.near"]);
+
+    // Carol can now join in Bob's place
+    contract.setCaller("carol.near", collateral20);
+    contract.joinCircle({ circle_id });
+    assert.equal(contract.getCircle({ circle_id }).members.length, 2);
+  });
+
+  it("15. [G2 Storage Cleanup] Deletes collateral storage keys on cancellation and completion to reclaim state", () => {
+    const contract = new OrbitContractHarness();
+
+    contract.setCaller("alice.near", FIVE_NEAR);
+    const circle_id = contract.createCircle({
+      name: "Cleanup Circle",
+      contribution_amount: FIVE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+
+    // Storage key exists while circle is active
+    const colKey = `col:${circle_id}:alice.near`;
+    assert.equal(contract.storage.has(colKey), true);
+
+    // Cancel pending circle
+    contract.cancelPendingCircle({ circle_id });
+
+    // Storage key was removed via storageRemove() to reclaim trie storage
+    assert.equal(contract.storage.has(colKey), false);
   });
 
 });

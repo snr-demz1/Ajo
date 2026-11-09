@@ -1,0 +1,13 @@
+{
+  "requestId": "6a6fac8d-9eb4-49d2-ab21-b6da138357e4",
+  "projectName": "Orbit Protocol",
+  "leadName": "Demi",
+  "email": "demi@orbitprotocol.xyz",
+  "size": "1",
+  "tracks": ["realworld", "social"],
+  "nearAddress": "orbit-v2-20234.testnet",
+  "projectUrl": "https://github.com/demil/orbit-protocol",
+  "demoUrl": "https://github.com/demil/orbit-protocol#readme",
+  "idea": "Orbit Protocol digitizes traditional informal rotating savings and credit associations (Ajo, Tandas, Susu, Chit Funds) used by over 1 billion people globally. We eliminate organizer theft through non-custodial smart contract escrow on NEAR, solve early-recipient ghosting with (N - 1) × C anti-ghosting collateral staking and automatic slashing, allow permissionless turn settlements via autonomous keeper agents, and convert lifelong savings disciplines into verifiable on-chain Soulbound reputation credentials.",
+  "consent": true
+}

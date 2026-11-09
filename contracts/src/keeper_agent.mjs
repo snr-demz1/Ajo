@@ -63,34 +63,92 @@ export class OrbitKeeperAgent {
   }
 }
 
-// Standalone verification execution against compiled WASM
+// Standalone verification execution
 if (process.argv[1] && process.argv[1].endsWith("keeper_agent.mjs")) {
-  console.log("=== ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===");
-  const harness = new OrbitContractHarness();
+  const isTestnet = process.argv.includes("--testnet");
 
-  // 2-member circle: required collateral is (2 - 1) * 10 NEAR = 10 NEAR
-  const TEN_NEAR = 10000000000000000000000000n;
-  harness.setCaller("alice.testnet", TEN_NEAR);
-  const circleId = harness.createCircle({
-    name: "Autonomous Test Circle",
-    contribution_amount: TEN_NEAR.toString(),
-    round_duration_ms: 86400000,
-    total_members: 2
-  });
+  if (isTestnet) {
+    console.log("=== ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT (LIVE NEAR TESTNET) ===");
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const depPath = path.resolve(__dirname, "../testnet_deployment.json");
 
-  harness.setCaller("bob.testnet", TEN_NEAR);
-  harness.joinCircle({ circle_id: circleId });
+    if (!fs.existsSync(depPath)) {
+      console.error(`Deployment file not found at ${depPath}.`);
+      process.exit(1);
+    }
+    const dep = JSON.parse(fs.readFileSync(depPath, "utf8"));
+    const contractId = dep.contract_id;
+    const rpcUrl = dep.rpc_url || "https://rpc.testnet.near.org";
 
-  const keeper = new OrbitKeeperAgent(harness);
+    console.log(`[Keeper Agent] Connected to RPC: ${rpcUrl}`);
+    console.log(`[Keeper Agent] Monitoring Target Contract: ${contractId}`);
 
-  // Both deposit for Round 1
-  harness.setCaller("alice.testnet", TEN_NEAR);
-  harness.deposit({ circle_id: circleId });
-  harness.setCaller("bob.testnet", TEN_NEAR);
-  harness.deposit({ circle_id: circleId });
+    // Call view get_circles on NEAR Testnet RPC
+    const argsBase64 = Buffer.from(JSON.stringify({ from_index: 0, limit: 20 })).toString("base64");
+    const res = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "keeper-poll",
+        method: "query",
+        params: {
+          request_type: "call_function",
+          finality: "final",
+          account_id: contractId,
+          method_name: "get_circles",
+          args_base64: argsBase64
+        }
+      })
+    });
+    const json = await res.json();
+    if (json.error) {
+      console.error(`RPC Query Error: ${json.error.message}`);
+      process.exit(1);
+    }
+    const circles = JSON.parse(Buffer.from(json.result.result).toString("utf8"));
+    console.log(`[Keeper Agent] Found ${circles.length} circle(s) on NEAR Testnet.`);
 
-  // Keeper triggers payout permissionlessly
-  await keeper.runPollCycle();
+    for (const c of circles) {
+      const round = c.current_round;
+      const paidList = (c.round_paid_members && c.round_paid_members[String(round)]) || [];
+      console.log(`[Keeper Agent] Circle "${c.name}" [${c.id}]: Status=${c.status}, Round ${round}/${c.total_members}, Deposits=${paidList.length}/${c.total_members}`);
+      if (c.status === "Active" && paidList.length >= c.total_members) {
+        console.log(`[Keeper Agent] ⚡ Condition Met: Round ${round} fully funded! Ready for permissionless claim_payout.`);
+      }
+    }
+    console.log("=== Keeper Agent Testnet poll cycle completed successfully! ===");
+  } else {
+    console.log("=== ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===");
+    const harness = new OrbitContractHarness();
 
-  console.log("=== Keeper Agent WASM verification finished successfully! ===");
+    // 2-member circle: required collateral is (2 - 1) * 10 NEAR = 10 NEAR
+    const TEN_NEAR = 10000000000000000000000000n;
+    harness.setCaller("alice.testnet", TEN_NEAR);
+    const circleId = harness.createCircle({
+      name: "Autonomous Test Circle",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 86400000,
+      total_members: 2
+    });
+
+    harness.setCaller("bob.testnet", TEN_NEAR);
+    harness.joinCircle({ circle_id: circleId });
+
+    const keeper = new OrbitKeeperAgent(harness);
+
+    // Both deposit for Round 1
+    harness.setCaller("alice.testnet", TEN_NEAR);
+    harness.deposit({ circle_id: circleId });
+    harness.setCaller("bob.testnet", TEN_NEAR);
+    harness.deposit({ circle_id: circleId });
+
+    // Keeper triggers payout permissionlessly
+    await keeper.runPollCycle();
+
+    console.log("=== Keeper Agent WASM verification finished successfully! ===");
+  }
 }

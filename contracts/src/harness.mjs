@@ -115,6 +115,18 @@ export class OrbitContractHarness {
         const key = new TextDecoder().decode(keyBytes);
         return this.storage.has(key) ? 1n : 0n;
       },
+      storage_remove: (key_len, key_ptr, register_id) => {
+        if (this._isView) {
+          throw new Error("HostError(ProhibitedInView { method_name: \"storage_remove\" })");
+        }
+        const keyBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(key_ptr), Number(key_len));
+        const key = new TextDecoder().decode(keyBytes);
+        if (!this.storage.has(key)) return 0n;
+        const oldVal = this.storage.get(key);
+        this.registers.set(register_id, oldVal);
+        this.storage.delete(key);
+        return 1n;
+      },
       value_return: (value_len, value_ptr) => {
         const valBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(value_ptr), Number(value_len));
         this._returnValue = new TextDecoder().decode(valBytes);
@@ -241,6 +253,10 @@ export class OrbitContractHarness {
 
   cancelPendingCircle({ circle_id }) {
     return this._invoke("cancel_pending_circle", { circle_id }, false);
+  }
+
+  leavePendingCircle({ circle_id }) {
+    return this._invoke("leave_pending_circle", { circle_id }, false);
   }
 
   withdrawOnTermination({ circle_id }) {

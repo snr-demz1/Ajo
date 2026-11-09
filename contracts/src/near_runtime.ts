@@ -27,6 +27,9 @@ export declare function env_storage_read(key_len: u64, key_ptr: u64, register_id
 @external("env", "storage_has_key")
 export declare function env_storage_has_key(key_len: u64, key_ptr: u64): u64;
 
+@external("env", "storage_remove")
+export declare function env_storage_remove(key_len: u64, key_ptr: u64, register_id: u64): u64;
+
 @external("env", "value_return")
 export declare function env_value_return(value_len: u64, value_ptr: u64): void;
 
@@ -128,6 +131,11 @@ export function storageWrite(key: string, val: string): void {
     u64(changetype<usize>(valBuf)),
     3
   );
+}
+
+export function storageRemove(key: string): bool {
+  const keyBuf = String.UTF8.encode(key);
+  return env_storage_remove(u64(keyBuf.byteLength), u64(changetype<usize>(keyBuf)), 3) == 1;
 }
 
 export function transferNear(recipient: string, amountBytes: Uint8Array): void {

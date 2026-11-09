@@ -9,6 +9,7 @@ import {
   storageRead,
   storageHasKey,
   storageWrite,
+  storageRemove,
   transferNear,
   u128FromString,
   u128ToString,
@@ -93,7 +94,7 @@ function isSafeIdentifier(s: string): bool {
 }
 
 function isSafeDigits(s: string): bool {
-  if (s.length < 1 || s.length > 39) return false;
+  if (s.length < 1 || s.length > 36) return false;
   for (let i = 0; i < s.length; i++) {
     const c = s.charCodeAt(i);
     if (c < 48 || c > 57) return false;
@@ -588,8 +589,8 @@ export function claim_payout(): void {
       const remCol = u128FromString(storageRead(defColKey, "0"));
       if (!u128IsZero(remCol)) {
         bonusPoolBytes = u128Add(bonusPoolBytes, remCol);
-        storageWrite(defColKey, "0");
       }
+      storageRemove(defColKey);
     }
 
     // Refund collateral to honest members and award +50 completion bonus
@@ -603,14 +604,14 @@ export function claim_payout(): void {
           refundBytes = u128Add(refundBytes, bonusPoolBytes);
           firstHonest = false;
         }
+        storageRemove(colKey);
         if (!u128IsZero(refundBytes)) {
-          storageWrite(colKey, "0");
           transferNear(m, refundBytes);
         }
         updateProfile(m, 1, 0, 0, 50, "0");
       }
     }
-    log("Circle " + circleId + " COMPLETED! Honest collaterals refunded.");
+    log("Circle " + circleId + " COMPLETED! Honest collaterals refunded and storage cleaned.");
   } else {
     const nextRound = round + 1;
     p[8] = nextRound.toString();
@@ -624,6 +625,47 @@ export function claim_payout(): void {
 
   storageWrite("c:" + circleId, p.join("|"));
   valueReturn('"' + recipient + '"');
+}
+
+export function leave_pending_circle(): void {
+  const input = getInputString();
+  const caller = predecessorAccountId();
+  const circleId = getJsonString(input, "circle_id");
+
+  assertCondition(isSafeIdentifier(caller), "Invalid caller account ID.");
+  assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
+
+  const raw = storageRead("c:" + circleId, "");
+  assertCondition(raw.length > 0, "Circle not found.");
+
+  const p = raw.split("|");
+  assertCondition(p[11] == "Pending", "Only Pending circles can be left via leave_pending_circle.");
+
+  const creator = p[1];
+  assertCondition(caller != creator, "Creator cannot leave their own circle; call cancel_pending_circle instead.");
+
+  const members = splitCsv(p[6]);
+  assertCondition(arrayContains(members, caller), "Caller is not a member of this circle.");
+
+  // Refund caller's collateral and clean up storage key
+  const colKey = "col:" + circleId + ":" + caller;
+  const refundBytes = u128FromString(storageRead(colKey, "0"));
+  storageRemove(colKey);
+  if (!u128IsZero(refundBytes)) {
+    transferNear(caller, refundBytes);
+  }
+
+  // Remove caller from members and payout_order so other members can join
+  const updatedMembers = new Array<string>();
+  for (let i = 0; i < members.length; i++) {
+    if (members[i] != caller) updatedMembers.push(members[i]);
+  }
+  p[6] = joinCsv(updatedMembers);
+  p[7] = joinCsv(updatedMembers);
+  storageWrite("c:" + circleId, p.join("|"));
+
+  log("Member " + caller + " left pending circle " + circleId + ". Collateral refunded.");
+  valueReturn("true");
 }
 
 export function cancel_pending_circle(): void {
@@ -640,22 +682,28 @@ export function cancel_pending_circle(): void {
   const p = raw.split("|");
   assertCondition(p[11] == "Pending", "Only Pending circles can be cancelled via cancel_pending_circle.");
 
-  const members = splitCsv(p[6]);
-  assertCondition(arrayContains(members, caller), "Only a member of this pending circle can cancel it.");
+  const creator = p[1];
+  assertCondition(
+    caller == creator,
+    "Only the circle creator can cancel a pending circle. Other members should call leave_pending_circle."
+  );
 
+  const members = splitCsv(p[6]);
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
     const colKey = "col:" + circleId + ":" + m;
     const refundBytes = u128FromString(storageRead(colKey, "0"));
-    storageWrite(colKey, "0");
+    storageRemove(colKey);
     if (!u128IsZero(refundBytes)) {
       transferNear(m, refundBytes);
     }
   }
 
   p[11] = "Terminated";
+  p[6] = "";
+  p[7] = "";
   storageWrite("c:" + circleId, p.join("|"));
-  log("Pending circle " + circleId + " cancelled by " + caller + ": all staked collaterals refunded.");
+  log("Pending circle " + circleId + " cancelled by creator " + caller + ": all staked collaterals refunded and storage cleaned.");
   valueReturn("true");
 }
 
@@ -674,23 +722,47 @@ export function withdraw_on_termination(): void {
   const status = p[11];
   const members = splitCsv(p[6]);
 
-  // If the circle is still Pending and a joined member calls withdraw_on_termination, cancel & refund all members
+  // If the circle is still Pending:
+  // - Creator can terminate & refund everyone
+  // - Other members leave and refund only themselves (preventing G1 cancel griefing)
   if (status == "Pending") {
-    assertCondition(arrayContains(members, caller), "Only a member of this pending circle can cancel it.");
-    for (let i = 0; i < members.length; i++) {
-      const m = members[i];
-      const colKey = "col:" + circleId + ":" + m;
-      const refundBytes = u128FromString(storageRead(colKey, "0"));
-      storageWrite(colKey, "0");
-      if (!u128IsZero(refundBytes)) {
-        transferNear(m, refundBytes);
+    const creator = p[1];
+    if (caller == creator) {
+      for (let i = 0; i < members.length; i++) {
+        const m = members[i];
+        const colKey = "col:" + circleId + ":" + m;
+        const refundBytes = u128FromString(storageRead(colKey, "0"));
+        storageRemove(colKey);
+        if (!u128IsZero(refundBytes)) {
+          transferNear(m, refundBytes);
+        }
       }
+      p[11] = "Terminated";
+      p[6] = "";
+      p[7] = "";
+      storageWrite("c:" + circleId, p.join("|"));
+      log("Pending circle " + circleId + " terminated by creator " + caller + ": all staked collaterals refunded.");
+      valueReturn("true");
+      return;
+    } else {
+      assertCondition(arrayContains(members, caller), "Caller is not a member of this pending circle.");
+      const colKey = "col:" + circleId + ":" + caller;
+      const refundBytes = u128FromString(storageRead(colKey, "0"));
+      storageRemove(colKey);
+      if (!u128IsZero(refundBytes)) {
+        transferNear(caller, refundBytes);
+      }
+      const updatedMembers = new Array<string>();
+      for (let i = 0; i < members.length; i++) {
+        if (members[i] != caller) updatedMembers.push(members[i]);
+      }
+      p[6] = joinCsv(updatedMembers);
+      p[7] = joinCsv(updatedMembers);
+      storageWrite("c:" + circleId, p.join("|"));
+      log("Member " + caller + " withdrew from pending circle " + circleId + " and left.");
+      valueReturn("true");
+      return;
     }
-    p[11] = "Terminated";
-    storageWrite("c:" + circleId, p.join("|"));
-    log("Pending circle " + circleId + " terminated by " + caller + ": all staked collaterals refunded.");
-    valueReturn("true");
-    return;
   }
 
   const defaulted = splitCsv(p[13]);
@@ -730,8 +802,8 @@ export function withdraw_on_termination(): void {
     const dCol = u128FromString(storageRead(dKey, "0"));
     if (!u128IsZero(dCol)) {
       recoveryPool = u128Add(recoveryPool, dCol);
-      storageWrite(dKey, "0");
     }
+    storageRemove(dKey);
   }
 
   // Refund every honest member's collateral + current-round deposit + prior-round contributions if unpaid
@@ -743,7 +815,7 @@ export function withdraw_on_termination(): void {
     if (!arrayContains(defaulted, m)) {
       const colKey = "col:" + circleId + ":" + m;
       let refundBytes = u128FromString(storageRead(colKey, "0"));
-      storageWrite(colKey, "0");
+      storageRemove(colKey);
 
       if (arrayContains(paidThisRound, m)) {
         refundBytes = u128Add(refundBytes, contributionBytes);
@@ -767,7 +839,7 @@ export function withdraw_on_termination(): void {
   }
 
   // Clear current round paid list and pot so it cannot be withdrawn twice
-  storageWrite(paidKey, "");
+  storageRemove(paidKey);
   p[12] = "0";
   storageWrite("c:" + circleId, p.join("|"));
 

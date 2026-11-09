@@ -7,6 +7,7 @@
     "test": "node --test contracts/test/orbit_test.mjs && node contracts/src/keeper_agent.mjs",
     "test:contract": "node --test contracts/test/orbit_test.mjs",
     "test:keeper": "node contracts/src/keeper_agent.mjs",
+    "keeper:testnet": "node contracts/src/keeper_agent.mjs --testnet",
     "build:contract": "npm --prefix contracts run build"
   },
   "keywords": [

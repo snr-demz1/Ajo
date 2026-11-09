@@ -94,7 +94,7 @@
           <div id="nav-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-[10px] font-bold text-black">
             A
           </div>
-          <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">alice-orbit-63536.testnet</span>
+          <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">alice-orbit-20234.testnet</span>
           <span id="nav-tier-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Bronze</span>
         </button>
       </div>
@@ -108,7 +108,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold mono text-[10px]">LIVE CONTRACT</span>
         <span>Deployed on NEAR Testnet:</span>
-        <a id="contract-explorer-link" href="https://testnet.nearblocks.io/address/orbit-v2-63536.testnet" target="_blank" rel="noopener noreferrer" class="mono font-bold text-[#00EC97] hover:underline">orbit-v2-63536.testnet ↗</a>
+        <a id="contract-explorer-link" href="https://testnet.nearblocks.io/address/orbit-v2-20234.testnet" target="_blank" rel="noopener noreferrer" class="mono font-bold text-[#00EC97] hover:underline">orbit-v2-20234.testnet ↗</a>
         <span id="signing-mode-badge" class="ml-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">Write Mode: Local Simulator (Provision Live Signer in Sign Up for On-Chain Tx)</span>
       </div>
       <div class="flex items-center gap-3 text-[11px] text-slate-400">
@@ -179,11 +179,11 @@
           <div class="flex items-end justify-between relative z-10 pt-2 border-t border-white/10">
             <div>
               <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Account</span>
-              <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">alice-orbit-63536.testnet</span>
+              <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">alice-orbit-20234.testnet</span>
             </div>
             <div class="text-right">
               <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Contract</span>
-              <span class="mono text-xs font-bold text-[#00EC97]">orbit-v2-63536.testnet</span>
+              <span class="mono text-xs font-bold text-[#00EC97]">orbit-v2-20234.testnet</span>
             </div>
           </div>
 
@@ -236,7 +236,7 @@
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-xl font-bold text-white">Active Savings Circles</h2>
-          <p class="text-xs text-slate-400">Live rotational state machines fetched from <code class="mono text-slate-300">orbit-v2-63536.testnet</code> via <code class="mono text-slate-300">get_circles</code>.</p>
+          <p class="text-xs text-slate-400">Live rotational state machines fetched from <code class="mono text-slate-300">orbit-v2-20234.testnet</code> via <code class="mono text-slate-300">get_circles</code>.</p>
         </div>
       </div>
 
@@ -252,7 +252,7 @@
           <h3 class="text-base font-bold text-white">Verified Protocol Activity &amp; On-Chain Transactions</h3>
           <p class="text-xs text-slate-400">Click any transaction hash to inspect its execution receipt on NearBlocks Testnet Explorer</p>
         </div>
-        <a href="https://testnet.nearblocks.io/address/orbit-v2-63536.testnet" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[#00EC97] hover:underline">View Contract on NearBlocks ↗</a>
+        <a href="https://testnet.nearblocks.io/address/orbit-v2-20234.testnet" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[#00EC97] hover:underline">View Contract on NearBlocks ↗</a>
       </div>
 
       <div id="personal-feed" class="divide-y divide-white/5 text-xs">
@@ -380,22 +380,61 @@
   <script>
     const TESTNET_RPC_URL = "https://rpc.testnet.near.org";
     const TESTNET_HELPER_URL = "https://helper.testnet.near.org/account";
-    const TESTNET_CONTRACT_ID = "orbit-v2-63536.testnet";
+    const TESTNET_CONTRACT_ID = "orbit-v2-20234.testnet";
     const YOCTO_PER_NEAR = 1e24;
 
+    const KEYPAIRS_STORAGE_KEY = "orbit_live_keypairs_v2";
+    const PROFILES_STORAGE_KEY = "orbit_user_profiles_v2";
+
+    function getStoredKeyPairs() {
+      try {
+        const raw = localStorage.getItem(KEYPAIRS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (_) { return {}; }
+    }
+
+    function persistKeyPair(handle, secretKey) {
+      liveKeyPairs[handle] = secretKey;
+      try {
+        localStorage.setItem(KEYPAIRS_STORAGE_KEY, JSON.stringify(liveKeyPairs));
+      } catch (_) {}
+    }
+
+    function getStoredProfiles() {
+      try {
+        const raw = localStorage.getItem(PROFILES_STORAGE_KEY);
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch (_) {}
+      return [
+        { handle: "alice-orbit-20234.testnet", name: "Alice", score: 530, onTime: 2, missed: 0, avatar: "A", isLiveSigner: false },
+        { handle: "bob-orbit-20234.testnet", name: "Bob", score: 515, onTime: 1, missed: 0, avatar: "B", isLiveSigner: false },
+        { handle: "charlie.testnet", name: "Charlie", score: 620, onTime: 8, missed: 0, avatar: "C", isLiveSigner: false }
+      ];
+    }
+
+    function persistProfiles() {
+      try {
+        localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(userProfiles));
+      } catch (_) {}
+    }
+
     // Map of accountId -> secretKey for browser-provisioned live Testnet accounts
-    const liveKeyPairs = {};
+    const liveKeyPairs = getStoredKeyPairs();
 
     // Live Testnet participants + interactive sandbox personas
-    let userProfiles = [
-      { handle: "alice-orbit-63536.testnet", name: "Alice", score: 530, onTime: 2, missed: 0, avatar: "A", isLiveSigner: false },
-      { handle: "bob-orbit-63536.testnet", name: "Bob", score: 515, onTime: 1, missed: 0, avatar: "B", isLiveSigner: false },
-      { handle: "charlie.testnet", name: "Charlie", score: 620, onTime: 8, missed: 0, avatar: "C", isLiveSigner: false }
-    ];
+    let userProfiles = getStoredProfiles();
+
+    // Ensure any previously saved live signer has isLiveSigner set to true
+    userProfiles.forEach(p => {
+      if (liveKeyPairs[p.handle]) p.isLiveSigner = true;
+    });
 
     let currentProfile = userProfiles[0];
 
-    // Initial state mirrors live on-chain state of `orbit-v2-63536.testnet` and updates dynamically via RPC sync
+    // Initial state mirrors live on-chain state of `orbit-v2-20234.testnet` and updates dynamically via RPC sync
     let circlesData = [
       {
         id: "circle_1",
@@ -406,15 +445,15 @@
         currentRound: 2,
         totalRounds: 2,
         status: "Active",
-        members: ["alice-orbit-63536.testnet", "bob-orbit-63536.testnet"],
-        payoutOrder: ["alice-orbit-63536.testnet", "bob-orbit-63536.testnet"],
+        members: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
+        payoutOrder: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
         paidThisRound: [],
-        paidRecipients: ["alice-orbit-63536.testnet"],
+        paidRecipients: ["alice-orbit-20234.testnet"],
         pot: 0,
         defaulted: [],
         memberCollateral: {
-          "alice-orbit-63536.testnet": 1,
-          "bob-orbit-63536.testnet": 1
+          "alice-orbit-20234.testnet": 1,
+          "bob-orbit-20234.testnet": 1
         }
       },
       {
@@ -426,15 +465,15 @@
         currentRound: 1,
         totalRounds: 2,
         status: "Active",
-        members: ["alice-orbit-63536.testnet", "bob-orbit-63536.testnet"],
-        payoutOrder: ["alice-orbit-63536.testnet", "bob-orbit-63536.testnet"],
-        paidThisRound: ["alice-orbit-63536.testnet"],
+        members: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
+        payoutOrder: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
+        paidThisRound: ["alice-orbit-20234.testnet"],
         paidRecipients: [],
         pot: 1,
         defaulted: [],
         memberCollateral: {
-          "alice-orbit-63536.testnet": 1,
-          "bob-orbit-63536.testnet": 1
+          "alice-orbit-20234.testnet": 1,
+          "bob-orbit-20234.testnet": 1
         }
       }
     ];
@@ -695,14 +734,46 @@
         left.appendChild(av);
         left.appendChild(info);
 
+        const rightSide = document.createElement('div');
+        rightSide.className = "flex items-center gap-2";
+
+        if (liveKeyPairs[p.handle]) {
+          const exportBtn = document.createElement('span');
+          exportBtn.className = "text-[10px] mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 cursor-pointer border border-emerald-500/20";
+          exportBtn.textContent = "🔑 Export Key";
+          exportBtn.onclick = (e) => {
+            e.stopPropagation();
+            copySecretKey(p.handle);
+          };
+          rightSide.appendChild(exportBtn);
+        }
+
         const status = document.createElement('span');
         status.className = "text-xs " + (p.handle === currentProfile.handle ? "text-emerald-400 font-bold" : "text-slate-400");
         status.textContent = p.handle === currentProfile.handle ? "Active" : "Switch";
+        rightSide.appendChild(status);
 
         btn.appendChild(left);
-        btn.appendChild(status);
+        btn.appendChild(rightSide);
         container.appendChild(btn);
       });
+    }
+
+    function copySecretKey(handle) {
+      const key = liveKeyPairs[handle];
+      if (!key) {
+        showToast("No browser private key found for this persona.", "error");
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).then(() => {
+          showToast(`Private key for ${handle} copied to clipboard! Keep it safe.`);
+        }).catch(() => {
+          prompt(`Private key for ${handle} (copy below):`, key);
+        });
+      } else {
+        prompt(`Private key for ${handle} (copy below):`, key);
+      }
     }
 
     async function activateProfile(handle) {
@@ -775,7 +846,7 @@
             body: JSON.stringify({ newAccountId: handle, newAccountPublicKey: publicKey })
           });
           if (res.ok) {
-            liveKeyPairs[handle] = keyPair.toString();
+            persistKeyPair(handle, keyPair.toString());
             isLiveSigner = true;
           }
         } catch (_) {
@@ -797,6 +868,7 @@
       };
 
       userProfiles.unshift(newProfile);
+      persistProfiles();
       currentProfile = newProfile;
       applyProfileToUI();
       renderCircles();
@@ -993,7 +1065,12 @@
 
         const termBtn = document.createElement('button');
         termBtn.className = "py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-[11px] font-semibold text-amber-300 transition";
-        termBtn.textContent = isPending ? `🛡️ Cancel Pending Circle ${modeSuffix}` : `🛡️ Withdraw on Termination ${modeSuffix}`;
+        if (isPending) {
+          const isCreator = (currentProfile.handle === circle.creator);
+          termBtn.textContent = isCreator ? `🛡️ Cancel Pending Circle ${modeSuffix}` : `🚪 Leave Pending Circle ${modeSuffix}`;
+        } else {
+          termBtn.textContent = `🛡️ Withdraw on Termination ${modeSuffix}`;
+        }
         termBtn.onclick = () => executeTerminateAndRefund(circle.id);
         actions.appendChild(termBtn);
 
@@ -1163,6 +1240,7 @@
       if (!circle) return;
 
       const isPending = circle.status === "Pending";
+      const isCreator = (currentProfile.handle === circle.creator);
       if (!isPending && circle.paidThisRound.length >= circle.totalRounds && circle.status !== "Terminated") {
         showToast("All members paid this round — use Claim Pot instead.", "error");
         return;
@@ -1171,13 +1249,32 @@
       let txHash = null;
       if (currentProfile.isLiveSigner) {
         try {
-          const method = isPending ? "cancel_pending_circle" : "withdraw_on_termination";
+          const method = isPending ? (isCreator ? "cancel_pending_circle" : "leave_pending_circle") : "withdraw_on_termination";
           showToast(`Signing on-chain ${method} transaction on NEAR Testnet...`);
           txHash = await callNearChangeIfLive(method, { circle_id: circleId }, 0);
         } catch (err) {
           showToast(`On-chain tx error: ${err.message}`, "error");
           return;
         }
+      }
+
+      const colAmt = circle.collateralPerMember || ((circle.totalRounds - 1) * circle.contribution);
+
+      if (isPending && !isCreator) {
+        // Non-creator left pending circle: circle stays Pending for others!
+        circle.members = circle.members.filter(m => m !== currentProfile.handle);
+        circle.payoutOrder = circle.payoutOrder.filter(m => m !== currentProfile.handle);
+        renderCircles();
+        addFeedEntry(
+          `leave_pending_circle(${circle.id}) Executed`,
+          `${currentProfile.handle} left pending circle; 100% of collateral (${colAmt} NEAR) refunded.`,
+          `+${colAmt}.00 NEAR (Collateral Refund)`,
+          "Collateral Refunded",
+          true,
+          txHash
+        );
+        showToast(`Left circle ${circle.id} safely. Collateral refunded!`);
+        return;
       }
 
       if (!isPending) {
@@ -1190,7 +1287,6 @@
 
       circle.status = "Terminated";
       const honestMembers = circle.members.filter(m => !circle.defaulted.includes(m));
-      const colAmt = circle.collateralPerMember || ((circle.totalRounds - 1) * circle.contribution);
       const refundPerHonest = isPending ? colAmt : (colAmt + circle.contribution);
       circle.pot = 0;
       circle.paidThisRound = [];
@@ -1256,7 +1352,7 @@
       }
 
       const newId = `circle_${circlesData.length + 1}`;
-      const pool = [currentProfile.handle, "alice-orbit-63536.testnet", "bob-orbit-63536.testnet", "charlie.testnet"];
+      const pool = [currentProfile.handle, "alice-orbit-20234.testnet", "bob-orbit-20234.testnet", "charlie.testnet"];
       const uniqueMembers = txHash ? [currentProfile.handle] : [...new Set(pool)].slice(0, size);
       while (!txHash && uniqueMembers.length < size) {
         uniqueMembers.push(`member${uniqueMembers.length + 1}.testnet`);
@@ -1314,36 +1410,36 @@
     renderCircles();
 
     addFeedEntry(
-      "Deploy Hardened WASM Contract (orbit-v2-63536.testnet)",
-      "Compiled AssemblyScript WASM (25,750 bytes) deployed to NEAR Testnet",
-      "25.8 KB WASM",
+      "Deploy Hardened WASM Contract (orbit-v2-20234.testnet)",
+      "Compiled AssemblyScript WASM (27,480 bytes) deployed to NEAR Testnet",
+      "27.5 KB WASM",
       "Confirmed On-Chain",
       true,
-      "FyUZcBf82aejN36toBQjhv3U76p15qdxnzuUmqcu79X9"
+      "8B94PG26DE2xhuKisDbYZJRuBeJAUkmQCwCCkhne3ZEH"
     );
     addFeedEntry(
       "Initialize Contract State (init)",
-      "Counter initialized with re-init guard on orbit-v2-63536.testnet",
+      "Counter initialized with re-init guard on orbit-v2-20234.testnet",
       "0.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "FwMJhzXYhXeEDi8Qjqhbct4nDHYohTwd7sQjx4jDmPub"
+      "8hxakoF1xKxGECVs4mqT9axuax3wqNLYNT62tGVFYVg"
     );
     addFeedEntry(
       "Create Circle #1: Lagos Tech Founders Ajo",
-      "alice-orbit-63536.testnet staked 1 NEAR (N-1)x collateral on NEAR Testnet",
+      "alice-orbit-20234.testnet staked 1 NEAR (N-1)x collateral on NEAR Testnet",
       "-1.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "8RHE88LNRqAnxhe6qAqeJARxsBbTDgXPrWF79o2qQWgK"
+      "BCg7pmsEUKnQbFfXwianXWbcqp9vNDDQHLfFfBnUAzFe"
     );
     addFeedEntry(
       "Join Circle #1 & Sort Payout Order",
-      "bob-orbit-63536.testnet staked 1 NEAR collateral -> Circle #1 Activated",
+      "bob-orbit-20234.testnet staked 1 NEAR collateral -> Circle #1 Activated",
       "-1.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "38ssRdDeZNkGeqyaw8MyksqwycX4e7ViFw7MtDaDnqJs"
+      "HMSzwKeyurr7Lnu8v5MdBtKC5zcxQMtDqw7tHq3arMYV"
     );
     addFeedEntry(
       "Round 1 Deposits (Alice & Bob)",
@@ -1351,23 +1447,23 @@
       "+2.00 NEAR Pot",
       "+15 Credit Score",
       true,
-      "56fhPpPziivjKddp5hWaqg1BJDLn7Akhay1dTASn4kxt"
+      "FSKoqTsx3hqEMajPbG5bY4CVSABC1y8resYhcEykuLE"
     );
     addFeedEntry(
       "Permissionless claim_payout (Circle #1 Round 1)",
-      "2 NEAR pot disbursed on-chain to alice-orbit-63536.testnet; advanced to Round 2",
+      "2 NEAR pot disbursed on-chain to alice-orbit-20234.testnet; advanced to Round 2",
       "+2.00 NEAR Disbursed",
       "Round 1 Settled",
       true,
-      "4qdPH9QPKrGyAfNBDFCvgB6JFSkfv3FovpXoiUucPaxo"
+      "Aba5qdyWFcVWy2rgqQvrBXCsow563DLqyiLXQTndQbS8"
     );
     addFeedEntry(
       "Circle #2 Round 1 Deposit (Nairobi Susu Savings)",
-      "alice-orbit-63536.testnet deposited 1 NEAR on-chain (1/2 paid)",
+      "alice-orbit-20234.testnet deposited 1 NEAR on-chain (1/2 paid)",
       "+1.00 NEAR Pot",
       "Confirmed On-Chain",
       true,
-      "6HbQHf45CpNNp3ofeDFG1zCZgXYqSkNwyDq4i52jRkWc"
+      "4SiGEWRnQ8UZQkxMtzMMXmSpwF5UJ9TU5asmvJdJzLAU"
     );
 
     // Sync live state from https://rpc.testnet.near.org on startup
