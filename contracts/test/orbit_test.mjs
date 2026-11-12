@@ -656,4 +656,155 @@ describe("Orbit Protocol: Compiled WASM Smart Contract & Security Invariants", (
     assert.equal(aliceReceived, 3n * TEN_NEAR);
   });
 
+  it("19. [Credit] Silver pass locks half, voucher locks the rest, and ghosting still pays honest members", () => {
+    const contract = new OrbitContractHarness();
+    const required = 2n * TEN_NEAR;
+    const half = TEN_NEAR;
+
+    // Bronze cannot open a credit line.
+    contract.setCaller("alice.near", half);
+    assert.throws(
+      () =>
+        contract.createCircle({
+          name: "Bronze Credit",
+          contribution_amount: TEN_NEAR.toString(),
+          round_duration_ms: 60000,
+          total_members: 3,
+          credit: 1
+        }),
+      /Silver soulbound pass/
+    );
+
+    // Warm Bob to Silver (580) and mint his pass.
+    contract.setCaller("bob.near", FIVE_NEAR);
+    const warmupId = contract.createCircle({
+      name: "Warmup Circle",
+      contribution_amount: FIVE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+    contract.setCaller("dave.near", FIVE_NEAR);
+    contract.joinCircle({ circle_id: warmupId });
+    for (let r = 1; r <= 2; r++) {
+      contract.setCaller("bob.near", FIVE_NEAR);
+      contract.deposit({ circle_id: warmupId });
+      contract.setCaller("dave.near", FIVE_NEAR);
+      contract.deposit({ circle_id: warmupId });
+      contract.setCaller("keeper.near", 0n);
+      contract.claimPayout({ circle_id: warmupId });
+    }
+    assert.equal(contract.getReputationProfile({ account_id: "bob.near" }).reputation_score, 580);
+    const transferStart = contract.transfers.length;
+
+    contract.setCaller("alice.near", required);
+    const circle_id = contract.createCircle({
+      name: "Vouched Circle",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 3
+    });
+    contract.setCaller("bob.near", half);
+    contract.joinCircle({ circle_id, credit: 1 });
+    contract.setCaller("charlie.near", required);
+    contract.joinCircle({ circle_id });
+    assert.equal(contract.getCircle({ circle_id }).status, CircleStatus.Pending);
+
+    contract.setCaller("vera.near", half);
+    contract.vouch({ circle_id, member_id: "bob.near" });
+    const live = contract.getCircle({ circle_id });
+    assert.equal(live.status, CircleStatus.Active);
+    assert.equal(live.payout_order[0], "bob.near");
+
+    for (const m of ["alice.near", "bob.near", "charlie.near"]) {
+      contract.setCaller(m, TEN_NEAR);
+      contract.deposit({ circle_id });
+    }
+    contract.setCaller("keeper.near", 0n);
+    assert.equal(contract.claimPayout({ circle_id }), "bob.near");
+
+    // Bob ghosts the remaining two rounds. His half is seized, then Vera's half.
+    for (let round = 0; round < 2; round++) {
+      contract.setCaller("alice.near", TEN_NEAR);
+      contract.deposit({ circle_id });
+      contract.setCaller("charlie.near", TEN_NEAR);
+      contract.deposit({ circle_id });
+      contract.advanceTime(70000);
+      contract.setCaller("keeper.near", 0n);
+      contract.reportDefault({ circle_id, defaulter_id: "bob.near" });
+      contract.claimPayout({ circle_id });
+    }
+
+    const received = (id) =>
+      contract.transfers.slice(transferStart).filter((t) => t.to === id).reduce((acc, t) => acc + t.amount, 0n);
+
+    // Honest members get their pot and their full collateral back.
+    assert.equal(received("alice.near"), 3n * TEN_NEAR + required);
+    assert.equal(received("charlie.near"), 3n * TEN_NEAR + required);
+    // Bob's profit is exactly Vera's loss. Together they extract nothing.
+    const bobNet = received("bob.near") - (half + TEN_NEAR);
+    const veraNet = received("vera.near") - half;
+    assert.equal(bobNet + veraNet, 0n);
+    assert.equal(veraNet, -half);
+    assert.equal(contract.getCircle({ circle_id }).status, CircleStatus.Completed);
+  });
+
+  it("20. [Soulbound NFT] Reputation pass is non-transferable and publishes the collateral rate", () => {
+    const contract = new OrbitContractHarness();
+    assert.equal(contract.nftToken({ token_id: "alice.near" }), null);
+
+    contract.setCaller("alice.near", ONE_NEAR);
+    contract.createCircle({
+      name: "Pass Circle",
+      contribution_amount: ONE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+
+    const pass = contract.nftToken({ token_id: "alice.near" });
+    assert.equal(pass.owner_id, "alice.near");
+    assert.equal(pass.soulbound, true);
+    assert.equal(pass.metadata.extra.includes("collateral_bps=10000"), true);
+    assert.throws(() => contract.nftTransfer(), /Soulbound/);
+    assert.equal(contract.nftToken({ token_id: "alice.near" }).owner_id, "alice.near");
+  });
+
+  it("21. [Stablecoin] Circle collateral and the pot move as fungible-token calls, not NEAR", () => {
+    const contract = new OrbitContractHarness();
+    const unit = 1_000_000n;
+    const token = "usdc.testnet";
+
+    contract.setCaller("alice.near", 0n);
+    const circle_id = contract.createCircle({
+      name: "USDC Circle",
+      contribution_amount: unit.toString(),
+      round_duration_ms: 60000,
+      total_members: 2,
+      token_id: token
+    });
+    assert.equal(contract.getCircle({ circle_id }).status, CircleStatus.Pending);
+
+    contract.setCaller(token, 1n);
+    contract.ftOnTransfer({ sender_id: "alice.near", amount: unit, msg: `collateral:${circle_id}` });
+    contract.setCaller("bob.near", 0n);
+    contract.joinCircle({ circle_id });
+    contract.setCaller(token, 1n);
+    contract.ftOnTransfer({ sender_id: "bob.near", amount: unit, msg: `collateral:${circle_id}` });
+    assert.equal(contract.getCircle({ circle_id }).status, CircleStatus.Active);
+
+    contract.setCaller("alice.near", unit);
+    assert.throws(() => contract.deposit({ circle_id }), /ft_transfer_call/);
+
+    contract.setCaller(token, 1n);
+    contract.ftOnTransfer({ sender_id: "alice.near", amount: unit, msg: `deposit:${circle_id}` });
+    contract.ftOnTransfer({ sender_id: "bob.near", amount: unit, msg: `deposit:${circle_id}` });
+    contract.setCaller("keeper.near", 0n);
+    contract.claimPayout({ circle_id });
+
+    assert.equal(contract.transfers.length, 0);
+    const payout = contract.functionCalls.find((c) => c.method === "ft_transfer");
+    assert.ok(payout);
+    assert.equal(payout.to, token);
+    assert.equal(payout.args.includes('"amount":"2000000"'), true);
+  });
+
 });

@@ -61,6 +61,7 @@ export class OrbitContractHarness {
     this.current_deposit = 0n;
     this.mock_time_ms = 1_700_000_000_000;
     this.transfers = [];
+    this.functionCalls = [];
     this.logs = [];
     this._returnValue = null;
     this._isView = false;
@@ -166,6 +167,35 @@ export class OrbitContractHarness {
           amount,
           triggered_by: this.current_caller
         });
+      },
+      promise_batch_action_function_call: (
+        promise_index,
+        method_name_len,
+        method_name_ptr,
+        arguments_len,
+        arguments_ptr,
+        amount_ptr,
+        gas
+      ) => {
+        if (this._isView) {
+          throw new Error("HostError(ProhibitedInView { method_name: \"promise_batch_action_function_call\" })");
+        }
+        const decoder = new TextDecoder();
+        const method = decoder.decode(
+          new Uint8Array(this.instance.exports.memory.buffer, Number(method_name_ptr), Number(method_name_len))
+        );
+        const args = decoder.decode(
+          new Uint8Array(this.instance.exports.memory.buffer, Number(arguments_ptr), Number(arguments_len))
+        );
+        const amountBytes = new Uint8Array(this.instance.exports.memory.buffer, Number(amount_ptr), 16);
+        this.functionCalls.push({
+          to: this.promises.get(promise_index),
+          method,
+          args,
+          deposit: le16ToBigInt(amountBytes),
+          gas: BigInt(gas),
+          triggered_by: this.current_caller
+        });
       }
     };
 
@@ -189,6 +219,7 @@ export class OrbitContractHarness {
     // Snapshot state for atomic rollback on panic
     const storageSnapshot = new Map(this.storage);
     const transfersLen = this.transfers.length;
+    const callsLen = this.functionCalls.length;
     const prevIsView = this._isView;
 
     this._isView = isView;
@@ -203,6 +234,7 @@ export class OrbitContractHarness {
       // Atomic rollback on panic
       this.storage = storageSnapshot;
       this.transfers.length = transfersLen;
+      this.functionCalls.length = callsLen;
       throw err;
     } finally {
       this._isView = prevIsView;
@@ -218,21 +250,42 @@ export class OrbitContractHarness {
     this.mock_time_ms += Number(ms);
   }
 
-  createCircle({ name, contribution_amount, round_duration_ms, total_members }) {
+  createCircle({ name, contribution_amount, round_duration_ms, total_members, credit = 0, token_id = "" }) {
+    const args = {
+      name,
+      contribution_amount: BigInt(contribution_amount).toString(),
+      round_duration_ms: Number(round_duration_ms),
+      total_members: Number(total_members)
+    };
+    if (credit) args.credit = 1;
+    if (token_id) args.token_id = token_id;
+    return this._invoke("create_circle", args, false);
+  }
+
+  joinCircle({ circle_id, credit = 0 }) {
+    const args = { circle_id };
+    if (credit) args.credit = 1;
+    return this._invoke("join_circle", args, false);
+  }
+
+  vouch({ circle_id, member_id }) {
+    return this._invoke("vouch", { circle_id, member_id }, false);
+  }
+
+  ftOnTransfer({ sender_id, amount, msg }) {
     return this._invoke(
-      "create_circle",
-      {
-        name,
-        contribution_amount: BigInt(contribution_amount).toString(),
-        round_duration_ms: Number(round_duration_ms),
-        total_members: Number(total_members)
-      },
+      "ft_on_transfer",
+      { sender_id, amount: BigInt(amount).toString(), msg },
       false
     );
   }
 
-  joinCircle({ circle_id }) {
-    return this._invoke("join_circle", { circle_id }, false);
+  nftToken({ token_id }) {
+    return this._invoke("nft_token", { token_id }, true);
+  }
+
+  nftTransfer() {
+    return this._invoke("nft_transfer", { token_id: "unused.near", receiver_id: "other.near" }, false);
   }
 
   deposit({ circle_id }) {

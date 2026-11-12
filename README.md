@@ -3,29 +3,28 @@
 > **Decentralized Rotating Savings & Credit Associations (ROSCAs) with `(N - 1) × C` Anti-Ghosting Collateral & Soulbound Reputation on NEAR Protocol**
 
 Submitted for the **[NEAR Hackathon: Build Beyond Boundaries](https://nearhackathon.com/)** (Nov 1 – Nov 14, 2026).
-* **Primary Track:** Real-World Money (`realworld`)
-* **Secondary Track:** Social Money (`social`)
+* **Tracks:** Real-World Money (`realworld`), NFTs That Do Something (`nfts`), Social Money (`social`)
 
 ---
 
 ## 🔗 Live NEAR Testnet Deployment & On-Chain Proof
 
-Orbit Protocol is compiled to native WebAssembly (`contracts/build/orbit_contract.wasm`, 28,260 bytes) and deployed live on **NEAR Testnet**:
+Orbit Protocol is compiled to native WebAssembly (`contracts/build/orbit_contract.wasm`, 36,930 bytes) and deployed live on **NEAR Testnet**:
 
-* **Contract Account ID:** [`orbit-v2-87299.testnet`](https://testnet.nearblocks.io/address/orbit-v2-87299.testnet)
-* **Testnet Participant Accounts:** [`alice-orbit-87299.testnet`](https://testnet.nearblocks.io/address/alice-orbit-87299.testnet), [`bob-orbit-87299.testnet`](https://testnet.nearblocks.io/address/bob-orbit-87299.testnet)
+* **Contract Account ID:** [`orbit-v2-24237.testnet`](https://testnet.nearblocks.io/address/orbit-v2-24237.testnet)
+* **Testnet Participant Accounts:** [`alice-orbit-24237.testnet`](https://testnet.nearblocks.io/address/alice-orbit-24237.testnet), [`bob-orbit-24237.testnet`](https://testnet.nearblocks.io/address/bob-orbit-24237.testnet)
 * **Deployment Manifest:** [`contracts/testnet_deployment.json`](./contracts/testnet_deployment.json)
 
 | On-Chain Action | Method | NEAR Testnet Transaction Hash |
 | :--- | :--- | :--- |
-| **1. Deploy Compiled WASM (28,260 bytes)** | `DeployContract` | [`C6mUBA645sQfaqGbxRYQoojfzEdhrwwyhSWEoJ1YAKQs`](https://testnet.nearblocks.io/txns/C6mUBA645sQfaqGbxRYQoojfzEdhrwwyhSWEoJ1YAKQs) |
-| **2. Initialize Contract (Re-Init Guarded)** | `init` | [`8knkXDCrWHmUy7jrJF6L9MUTFj8VgjVbc5iKbwUDZv2d`](https://testnet.nearblocks.io/txns/8knkXDCrWHmUy7jrJF6L9MUTFj8VgjVbc5iKbwUDZv2d) |
-| **3. Create Circle #1 (1 NEAR + 1 NEAR Collateral)** | `create_circle` | [`3hmSWSZ4up44HzFZWJhWWVZHsTWfvyEYZwx36VBMGmef`](https://testnet.nearblocks.io/txns/3hmSWSZ4up44HzFZWJhWWVZHsTWfvyEYZwx36VBMGmef) |
-| **4. Join & Activate Circle #1** | `join_circle` | [`2iiGpP7WPgC4SUSuv25VyfEPSqqEXLZqioF3R1L1RKDV`](https://testnet.nearblocks.io/txns/2iiGpP7WPgC4SUSuv25VyfEPSqqEXLZqioF3R1L1RKDV) |
-| **5. Round 1 Deposit (Alice)** | `deposit` | [`9b7KjeyoBm5PVftttVyScRHmmgWq13hp1gTRA6XBaEvR`](https://testnet.nearblocks.io/txns/9b7KjeyoBm5PVftttVyScRHmmgWq13hp1gTRA6XBaEvR) |
-| **6. Round 1 Deposit (Bob)** | `deposit` | [`2LPrSJ85WgfsEgffNuTUxVMgQE8n1qw7Co9DL3b1tjMR`](https://testnet.nearblocks.io/txns/2LPrSJ85WgfsEgffNuTUxVMgQE8n1qw7Co9DL3b1tjMR) |
-| **7. Permissionless Round 1 Pot Disbursement** | `claim_payout` | [`911pM3bBRsiNXYw8QyTLSRyUeCY1ywTjLwHgWqGkr9Rw`](https://testnet.nearblocks.io/txns/911pM3bBRsiNXYw8QyTLSRyUeCY1ywTjLwHgWqGkr9Rw) |
-| **8. Circle #2 Active Round 1 Deposit** | `deposit` | [`5xWfwLtbjd9Tn6V5tLWqRgTESTSXDzkFtuxsWaH9dUvT`](https://testnet.nearblocks.io/txns/5xWfwLtbjd9Tn6V5tLWqRgTESTSXDzkFtuxsWaH9dUvT) |
+| **1. Deploy Compiled WASM (36,930 bytes)** | `DeployContract` | [`27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn`](https://testnet.nearblocks.io/txns/27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn) |
+| **2. Initialize Contract (Re-Init Guarded)** | `init` | [`HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu`](https://testnet.nearblocks.io/txns/HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu) |
+| **3. Create Circle #1 (1 NEAR + 1 NEAR Collateral)** | `create_circle` | [`5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs`](https://testnet.nearblocks.io/txns/5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs) |
+| **4. Join & Activate Circle #1** | `join_circle` | [`4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN`](https://testnet.nearblocks.io/txns/4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN) |
+| **5. Round 1 Deposit (Alice)** | `deposit` | [`JBsWL3SdpoZ8XKFHtiJpNgGrAFQQrD5kxAU8kf9af6af`](https://testnet.nearblocks.io/txns/JBsWL3SdpoZ8XKFHtiJpNgGrAFQQrD5kxAU8kf9af6af) |
+| **6. Round 1 Deposit (Bob)** | `deposit` | [`F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs`](https://testnet.nearblocks.io/txns/F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs) |
+| **7. Permissionless Round 1 Pot Disbursement** | `claim_payout` | [`7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6`](https://testnet.nearblocks.io/txns/7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6) |
+| **8. Circle #2 Active Round 1 Deposit** | `deposit` | [`DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ`](https://testnet.nearblocks.io/txns/DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ) |
 
 ---
 
@@ -45,7 +44,7 @@ Over 1 billion people save hundreds of billions of dollars annually in informal 
 
 > [!NOTE]
 > **Economic Design Note on Collateral & Financial Inclusion:**
-> In fully trustless, permissionless environments, `(N - 1) × C` collateral is mathematically necessary to make ghosting zero-profit (`profit ≤ 0`). However, in emerging markets where unbanked users may lack upfront capital, Orbit's Soulbound Reputation passport provides an evolutionary bridge: as users build on-chain credit scores through verified on-time deposits (+15) and circle completions (+50), future circle templates can safely offer *graduated reputation collateral* (e.g. 50% or 0% collateral for Silver/Gold/Platinum tiers), backed by decentralized social vouching.
+> **Credit that stays solvent.** Bronze still locks the full `(N - 1) × C`. A Silver soulbound pass (score ≥ 550) locks half, and `vouch` locks the other half before the circle can start. If that member is paid first and then ghosts, the contract seizes the member's half and then the voucher's half. Later honest members are still paid. The member's profit and the voucher's loss sum to zero. The pass is a non-transferable NFT (`nft_transfer` panics). Circles can also be denominated in a NEP-141 stablecoin: collateral, deposits, and the pot move through `ft_on_transfer` and `ft_transfer`.
 
 ---
 
@@ -59,9 +58,9 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
   npm --prefix contracts run build
   ```
 * **See Y:**
-  Compiles `contracts/src/index.ts` and `contracts/src/near_runtime.ts` via AssemblyScript (`asc`) into `contracts/build/orbit_contract.wasm` (28,260 bytes) with exit code `0`.
+  Compiles `contracts/src/index.ts` and `contracts/src/near_runtime.ts` via AssemblyScript (`asc`) into `contracts/build/orbit_contract.wasm` (36,930 bytes) with exit code `0`.
 
-### Step 2: Run the 18 WASM Invariant Tests & Autonomous Keeper Agent
+### Step 2: Run the WASM invariant tests, the relay policy, and the keeper
 `contracts/src/harness.mjs` loads and executes the compiled `contracts/build/orbit_contract.wasm` binary directly inside Node's native `WebAssembly` VM (instantiating fresh WASM instances, enforcing NEAR host registers, `u128` little-endian deposits, atomic state rollback on panic, `storageRemove` state deletion, and `ProhibitedInView` read-only enforcement on `@view` methods).
 
 * **Do X:**
@@ -89,7 +88,12 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
     ✔ 16. [Exploit H1] Prevents JSON key-value confusion when a field value equals a JSON key name
     ✔ 17. [Invariant H2] Enforces 100% conservation of value on Round-1 termination and blocks double-settlement
     ✔ 18. [Keeper Agent] Automatically slashes expired-round defaulters and settles payout in a single poll cycle
-  ✔ Orbit Protocol: Compiled WASM Smart Contract & Security Invariants (pass 18 | fail 0)
+  ✔ 19. [Credit] Silver pass locks half, voucher locks the rest, and ghosting still pays honest members
+  ✔ 20. [Soulbound NFT] Reputation pass is non-transferable and publishes the collateral rate
+  ✔ 21. [Stablecoin] Circle collateral and the pot move as fungible-token calls, not NEAR
+  ✔ 22. [Gasless relay] sponsors round deposits and refuses collateral, vouch, and payout
+  ✔ 23. [Intents] dry quote body cannot create a deposit address
+  ✔ Orbit Protocol: Compiled WASM Smart Contract & Security Invariants (pass 21 | fail 0)
 
   === ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===
   [Keeper Agent] Scanning active circles via get_circles view...
@@ -110,7 +114,7 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
   ```text
   === ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT (LIVE NEAR TESTNET) ===
   [Keeper Agent] Connected to RPC: https://rpc.testnet.near.org
-  [Keeper Agent] Monitoring Target Contract: orbit-v2-87299.testnet
+  [Keeper Agent] Monitoring Target Contract: orbit-v2-24237.testnet
   [Keeper Agent] Found 2 circle(s) on NEAR Testnet.
   [Keeper Agent] Circle "Lagos Tech Founders Ajo" [circle_1]: Status=Active, Round 2/2, Deposits=0/2
   [Keeper Agent] Circle "Nairobi Susu Savings" [circle_2]: Status=Active, Round 1/2, Deposits=1/2
@@ -121,12 +125,48 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
 * **Do X:**
   Open `frontend/index.html` in any browser.
 * **See Y:**
-  1. **Live NEAR Testnet RPC Sync:** On load, the app queries `https://rpc.testnet.near.org` (`call_function` on `orbit-v2-87299.testnet`) to fetch live circles (`get_circles`) and reputation profiles (`get_reputation_profile`).
-  2. **Honest Dual Write Mode (Local Simulator vs. Live In-Browser Testnet Signer):**
+  1. **Live NEAR Testnet RPC Sync:** On load, the app queries `https://rpc.testnet.near.org` (`call_function` on `orbit-v2-24237.testnet`) to fetch live circles (`get_circles`) and reputation profiles (`get_reputation_profile`). The live views include `token_id`, `credit_members`, `vouchers`, and `collateral_bps`. Tests 19–21 run the credit, soulbound, and stablecoin rules against this same WASM.
+   2. **Writes:** The page can simulate a circle locally, or sign with a testnet account from **Sign Up / Live Signer**. The simulator labels every write `Simulated locally`. The judge-facing proof of credit, the soulbound pass, and stablecoin payouts is `npm test`, tests 19–21.
+   3. **Honest Dual Write Mode (Local Simulator vs. Live In-Browser Testnet Signer):**
      * Using the pre-loaded demo personas explicitly labels actions `(Simulated)` with toast notifications clarifying `Simulated locally`.
      * Clicking **"✨ Sign Up / Live Signer"** with **"Provision Live NEAR Testnet Account (10 NEAR Faucet)"** checked uses `near-api-js` in the browser to generate an Ed25519 keypair, fund a real `.testnet` account via `https://helper.testnet.near.org/account`, and sign live on-chain transactions (`create_circle`, `join_circle`, `deposit`, `claim_payout`, `report_default`, `cancel_pending_circle`, `leave_pending_circle`, `withdraw_on_termination`) directly from the browser. Keypairs are persisted safely in local storage and can be backed up via the **"🔑 Export Key"** button.
 
 ---
+
+### Step 5: Check the gasless deposit policy
+The relayer may sponsor gas for a round `deposit` only. It refuses `vouch`, `claim_payout`, and stablecoin messages that lock collateral.
+
+* **Do X:**
+  ```bash
+  npm run relay:check
+  ```
+* **See Y:**
+  ```text
+  ok  orbit deposit: NEAR round deposit on the Orbit contract
+  ok  stablecoin deposit message: stablecoin round deposit
+  ok  collateral message: relayer only sponsors deposit messages on the stablecoin
+  ok  vouch: relayer refuses vouch
+  ok  claim payout: relayer refuses claim_payout
+  Relay policy check passed. Only round deposits are sponsored.
+  ```
+
+### Step 6: Print a dry NEAR Intents quote
+This asks 1Click for a USDC-to-USDC price with `dry: true`. A dry quote does not create a deposit address and does not move funds. Intents has no testnet. Use a mainnet account you control as `--recipient` before sending a live (non-dry) swap.
+
+* **Do X:**
+  ```bash
+  npm run quote:offline
+  ```
+* **See Y:** A JSON body whose `dry` field is `true`, `amount` is `"1000000"`, and which contains no `depositAddress`.
+
+* **Do X (live price, still dry):**
+  ```bash
+  npm run quote:dry -- --recipient=your-account.near --refund=your-account.near
+  ```
+* **See Y:** HTTP 201, an `amountOut`, and `depositAddress=absent`. The refund address is a checksummed origin-chain address. For ETH USDC that is an `0x` address, and the NEAR account only appears as `recipient`. No deposit address is created.
+
+### Before the form
+Prize NEAR is paid on mainnet. Put a mainnet account in `nearAddress`. The value in `submission.json` is still the testnet contract account. Post the demo on X yourself, with `@NEARProtocol` and `#NEARHackathon`, then put that status URL in `demoUrl`. Send the form once. If it was already sent, change fields at https://nearhackathon.com/request-changes.
 
 ## 🏗️ Repository Structure
 
@@ -135,7 +175,7 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
 │   └── build.yml                   # CI workflow: compiles WASM & runs 18-test suite
 ├── contracts/
 │   ├── build/
-│   │   └── orbit_contract.wasm     # Compiled NEAR WebAssembly smart contract binary (28,260 bytes)
+│   │   └── orbit_contract.wasm     # Compiled NEAR WebAssembly smart contract binary (36,930 bytes)
 │   ├── scripts/
 │   │   └── deploy_testnet.mjs      # Live NEAR Testnet deployment & verification script
 │   ├── src/
@@ -143,9 +183,12 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
 │   │   ├── near_runtime.ts         # NEAR VM host bindings, token-aware JSON parser & u128 math
 │   │   ├── types.ts                # Data model definitions
 │   │   ├── harness.mjs             # Node WebAssembly VM host executing orbit_contract.wasm
-│   │   └── keeper_agent.mjs        # Autonomous keeper polling get_circles, slashing defaults & claiming pots
+│   │   ├── keeper_agent.mjs        # Autonomous keeper polling get_circles, slashing defaults & claiming pots
+│   │   ├── relay_policy.mjs        # Gasless relayer policy: round deposits only
+│   │   └── intents_quote.mjs       # Dry NEAR Intents USDC quote
 │   ├── test/
-│   │   └── orbit_test.mjs          # 18 security, exploit, & economic invariant tests against WASM
+│   │   ├── orbit_test.mjs          # 21 security, credit, NFT, and stablecoin tests against WASM
+│   │   └── win_path.test.mjs       # Relay policy and dry-quote checks
 │   ├── package.json                # Contract build configuration
 │   └── testnet_deployment.json     # Public NEAR Testnet deployment manifest & tx hashes
 ├── frontend/

@@ -45,6 +45,17 @@ export declare function env_promise_batch_create(account_id_len: u64, account_id
 @external("env", "promise_batch_action_transfer")
 export declare function env_promise_batch_action_transfer(promise_index: u64, amount_ptr: u64): void;
 
+@external("env", "promise_batch_action_function_call")
+export declare function env_promise_batch_action_function_call(
+  promise_index: u64,
+  method_name_len: u64,
+  method_name_ptr: u64,
+  arguments_len: u64,
+  arguments_ptr: u64,
+  amount_ptr: u64,
+  gas: u64
+): void;
+
 // ------------------------------------------------------------
 // High-Level NEAR Host Wrappers
 // ------------------------------------------------------------
@@ -144,6 +155,27 @@ export function transferNear(recipient: string, amountBytes: Uint8Array): void {
   env_promise_batch_action_transfer(promiseIdx, u64(amountBytes.dataStart));
 }
 
+// Send NEP-141 tokens the contract already holds. Attaches 1 yoctoNEAR, which ft_transfer requires.
+export function ftTransfer(token: string, receiver: string, amountBytes: Uint8Array): void {
+  const args = '{"receiver_id":"' + receiver + '","amount":"' + u128ToString(amountBytes) + '"}';
+  const method = "ft_transfer";
+  const tokenBuf = String.UTF8.encode(token);
+  const methodBuf = String.UTF8.encode(method);
+  const argsBuf = String.UTF8.encode(args);
+  const oneYocto = u128FromString("1");
+  const promiseIdx = env_promise_batch_create(u64(tokenBuf.byteLength), u64(changetype<usize>(tokenBuf)));
+  const gas: u64 = 30000000000000;
+  env_promise_batch_action_function_call(
+    promiseIdx,
+    u64(methodBuf.byteLength),
+    u64(changetype<usize>(methodBuf)),
+    u64(argsBuf.byteLength),
+    u64(changetype<usize>(argsBuf)),
+    u64(oneYocto.dataStart),
+    gas
+  );
+}
+
 // ------------------------------------------------------------
 // 128-bit Unsigned Integer (yoctoNEAR) Arithmetic on Uint8Array(16)
 // ------------------------------------------------------------
@@ -231,6 +263,17 @@ export function u128MulSmall(a: Uint8Array, factor: u32): Uint8Array {
     const prod: u32 = u32(a[i]) * factor + carry;
     res[i] = u8(prod & 0xFF);
     carry = prod >> 8;
+  }
+  return res;
+}
+
+export function u128Div2(a: Uint8Array): Uint8Array {
+  const res = new Uint8Array(16);
+  let carry: u32 = 0;
+  for (let i = 15; i >= 0; i--) {
+    const cur: u32 = (carry << 8) | u32(a[i]);
+    res[i] = u8(cur / 2);
+    carry = cur % 2;
   }
   return res;
 }
