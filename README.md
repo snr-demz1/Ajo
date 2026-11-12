@@ -166,7 +166,11 @@ This asks 1Click for a USDC-to-USDC price with `dry: true`. A dry quote does not
 * **See Y:** HTTP 201, an `amountOut`, and `depositAddress=absent`. The refund address is a checksummed origin-chain address. For ETH USDC that is an `0x` address, and the NEAR account only appears as `recipient`. No deposit address is created.
 
 ### Before the form
-Prize NEAR is paid on mainnet. Put a mainnet account in `nearAddress`. The value in `submission.json` is still the testnet contract account. Post the demo on X yourself, with `@NEARProtocol` and `#NEARHackathon`, then put that status URL in `demoUrl`. Send the form once. If it was already sent, change fields at https://nearhackathon.com/request-changes.
+Prize NEAR is paid on mainnet to this implicit account:
+
+`f8aec92dd5faeed524e7d36bf8fee541bd67776047435a2267aed831aefacddf`
+
+That value is already in `submission.json`. Do not replace it with `ajo-26192.testnet` or any other testnet account. The private key stays off the repository. The launch post belongs on X, tagging `@NEARProtocol` and `#NEARHackathon`, and that status URL replaces `demoUrl`. Send the form once. If it was already sent, change fields at https://nearhackathon.com/request-changes.
 
 ## 🏗️ Repository Structure
 
