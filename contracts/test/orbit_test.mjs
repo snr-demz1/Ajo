@@ -7,7 +7,7 @@ const ONE_NEAR = 1_000_000_000_000_000_000_000_000n;
 const FIVE_NEAR = 5n * ONE_NEAR;
 const TEN_NEAR = 10n * ONE_NEAR;
 
-describe("Orbit Protocol: Compiled WASM Smart Contract & Security Invariants", () => {
+describe("Ajo: Compiled WASM Smart Contract & Security Invariants", () => {
 
   it("1. should require (N-1)*contribution collateral and sort payout_order by on-chain reputation score", () => {
     const contract = new OrbitContractHarness();

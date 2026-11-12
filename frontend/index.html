@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Orbit Protocol | Trustless Savings Circles & Credit on NEAR</title>
+  <title>Ajo | Trustless Savings Circles & Credit on NEAR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/near-api-js@4.0.4/dist/near-api-js.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,11 +69,11 @@
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#00EC97] to-[#0072CE] p-[1.5px] shadow-lg shadow-emerald-500/20">
           <div class="w-full h-full bg-[#07090E] rounded-[14px] flex items-center justify-center">
-            <span class="text-sm font-black text-[#00EC97]">O</span>
+            <span class="text-sm font-black text-[#00EC97]">A</span>
           </div>
         </div>
         <div>
-          <span class="font-extrabold text-base tracking-tight text-white display">Orbit Protocol</span>
+          <span class="font-extrabold text-base tracking-tight text-white display">Ajo</span>
           <span id="mode-pill" class="ml-2 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Live RPC Reads + Simulator / Live Signer</span>
         </div>
       </div>
@@ -94,7 +94,7 @@
           <div id="nav-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-[10px] font-bold text-black">
             A
           </div>
-          <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">alice-orbit-24237.testnet</span>
+          <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">alice-ajo-26192.testnet</span>
           <span id="nav-tier-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Bronze</span>
         </button>
       </div>
@@ -108,7 +108,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold mono text-[10px]">LIVE CONTRACT</span>
         <span>Deployed on NEAR Testnet:</span>
-        <a id="contract-explorer-link" href="https://testnet.nearblocks.io/address/orbit-v2-24237.testnet" target="_blank" rel="noopener noreferrer" class="mono font-bold text-[#00EC97] hover:underline">orbit-v2-24237.testnet ↗</a>
+        <a id="contract-explorer-link" href="https://testnet.nearblocks.io/address/ajo-26192.testnet" target="_blank" rel="noopener noreferrer" class="mono font-bold text-[#00EC97] hover:underline">ajo-26192.testnet ↗</a>
         <span id="signing-mode-badge" class="ml-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">Write Mode: Local Simulator (Provision Live Signer in Sign Up for On-Chain Tx)</span>
       </div>
       <div class="flex items-center gap-3 text-[11px] text-slate-400">
@@ -168,7 +168,7 @@
           <!-- Top Row -->
           <div class="flex items-start justify-between relative z-10">
             <div>
-              <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Orbit Passport • Click to Verify</span>
+              <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Ajo Pass • Click to Verify</span>
               <div class="display text-lg font-black text-white tracking-wider mt-0.5">SOULBOUND CREDENTIAL</div>
             </div>
 
@@ -197,11 +197,11 @@
           <div class="flex items-end justify-between relative z-10 pt-2 border-t border-white/10">
             <div>
               <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Account</span>
-              <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">alice-orbit-24237.testnet</span>
+              <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">alice-ajo-26192.testnet</span>
             </div>
             <div class="text-right">
               <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Contract</span>
-              <span class="mono text-xs font-bold text-[#00EC97]">orbit-v2-24237.testnet</span>
+              <span class="mono text-xs font-bold text-[#00EC97]">ajo-26192.testnet</span>
             </div>
           </div>
 
@@ -241,7 +241,7 @@
         <div class="glass-surface rounded-2xl p-5 col-span-2 sm:col-span-3 space-y-2 border-emerald-500/20 bg-emerald-500/[0.03]">
           <div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            <span>How Orbit Solves The ROSCA Defaulter &amp; Ghosting Problem</span>
+            <span>How Ajo Solves The ROSCA Defaulter &amp; Ghosting Problem</span>
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
             1. <strong>Full Anti-Ghosting Collateral <code class="mono">(N-1)&times;C</code>:</strong> Every member stakes <code class="mono">(total_members - 1) &times; contribution</code> upon joining, ensuring even the Round 1 recipient has <code class="mono">profit &le; 0</code> if they take the pot and ghost.<br>
@@ -296,7 +296,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-xl font-bold text-white">Active &amp; Pending Savings Circles</h2>
-          <p class="text-xs text-slate-400">Live rotational state machines fetched from <code class="mono text-slate-300">orbit-v2-24237.testnet</code> via <code class="mono text-slate-300">get_circles</code>.</p>
+          <p class="text-xs text-slate-400">Live rotational state machines fetched from <code class="mono text-slate-300">ajo-26192.testnet</code> via <code class="mono text-slate-300">get_circles</code>.</p>
         </div>
       </div>
 
@@ -312,7 +312,7 @@
           <h3 class="text-base font-bold text-white">Verified Protocol Activity &amp; On-Chain Transactions</h3>
           <p class="text-xs text-slate-400">Click any transaction hash to inspect its execution receipt on NearBlocks Testnet Explorer</p>
         </div>
-        <a href="https://testnet.nearblocks.io/address/orbit-v2-24237.testnet" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[#00EC97] hover:underline">View Contract on NearBlocks ↗</a>
+        <a href="https://testnet.nearblocks.io/address/ajo-26192.testnet" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[#00EC97] hover:underline">View Contract on NearBlocks ↗</a>
       </div>
 
       <div id="personal-feed" class="divide-y divide-white/5 text-xs">
@@ -328,7 +328,7 @@
         <div>
           <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">On-Chain Soulbound Credential (Non-Transferable)</span>
           <h3 class="text-lg font-bold text-white mt-0.5">Verifiable Credit Passport JSON</h3>
-          <p class="text-xs text-slate-400">Queried via <code class="mono text-slate-200">get_reputation_profile</code> on <code class="mono text-[#00EC97]">orbit-v2-24237.testnet</code></p>
+          <p class="text-xs text-slate-400">Queried via <code class="mono text-slate-200">get_reputation_profile</code> on <code class="mono text-[#00EC97]">ajo-26192.testnet</code></p>
         </div>
         <button onclick="closeModal('passport-modal')" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
       </div>
@@ -366,7 +366,7 @@
       <div class="flex justify-between items-start">
         <div>
           <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">NEAR Testnet Onboarding</span>
-          <h3 class="text-lg font-bold text-white mt-0.5">Mint Orbit Passport &amp; Signer</h3>
+          <h3 class="text-lg font-bold text-white mt-0.5">Mint Ajo Pass &amp; Signer</h3>
           <p class="text-xs text-slate-400">Provision a real funded <code class="mono">.testnet</code> account via NEAR Testnet Faucet to sign live on-chain transactions in the browser, or create a local simulator persona.</p>
         </div>
         <button onclick="closeModal('signup-modal')" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
@@ -488,7 +488,7 @@
     const TESTNET_RPC_URL = "https://rpc.testnet.near.org";
     const TESTNET_RPC_ENDPOINTS = ["https://rpc.testnet.near.org", "https://test.rpc.fastnear.com"];
     const TESTNET_HELPER_URL = "https://helper.testnet.near.org/account";
-    const TESTNET_CONTRACT_ID = "orbit-v2-24237.testnet";
+    const TESTNET_CONTRACT_ID = "ajo-26192.testnet";
     const YOCTO_PER_NEAR = 1e24;
 
     const KEYPAIRS_STORAGE_KEY = "orbit_live_keypairs_v2";
@@ -517,8 +517,8 @@
         }
       } catch (_) {}
       return [
-        { handle: "alice-orbit-24237.testnet", name: "Alice", score: 530, onTime: 2, missed: 0, avatar: "A", isLiveSigner: false },
-        { handle: "bob-orbit-24237.testnet", name: "Bob", score: 515, onTime: 1, missed: 0, avatar: "B", isLiveSigner: false },
+        { handle: "alice-ajo-26192.testnet", name: "Alice", score: 530, onTime: 2, missed: 0, avatar: "A", isLiveSigner: false },
+        { handle: "bob-ajo-26192.testnet", name: "Bob", score: 515, onTime: 1, missed: 0, avatar: "B", isLiveSigner: false },
         { handle: "charlie.testnet", name: "Charlie", score: 620, onTime: 8, missed: 0, avatar: "C", isLiveSigner: false }
       ];
     }
@@ -542,48 +542,48 @@
 
     let currentProfile = userProfiles[0];
 
-    // Initial state mirrors live on-chain state of `orbit-v2-24237.testnet` and updates dynamically via RPC sync
+    // Initial state mirrors live on-chain state of `ajo-26192.testnet` and updates dynamically via RPC sync
     let circlesData = [
       {
         id: "circle_1",
         name: "Lagos Tech Founders Ajo",
-        creator: "alice-orbit-24237.testnet",
+        creator: "alice-ajo-26192.testnet",
         cadence: "Daily (24 hours)",
         contribution: 1,
         collateralPerMember: 1,
         currentRound: 2,
         totalRounds: 2,
         status: "Active",
-        members: ["alice-orbit-24237.testnet", "bob-orbit-24237.testnet"],
-        payoutOrder: ["alice-orbit-24237.testnet", "bob-orbit-24237.testnet"],
+        members: ["alice-ajo-26192.testnet", "bob-ajo-26192.testnet"],
+        payoutOrder: ["alice-ajo-26192.testnet", "bob-ajo-26192.testnet"],
         paidThisRound: [],
-        paidRecipients: ["alice-orbit-24237.testnet"],
+        paidRecipients: ["alice-ajo-26192.testnet"],
         pot: 0,
         defaulted: [],
         memberCollateral: {
-          "alice-orbit-24237.testnet": 1,
-          "bob-orbit-24237.testnet": 1
+          "alice-ajo-26192.testnet": 1,
+          "bob-ajo-26192.testnet": 1
         }
       },
       {
         id: "circle_2",
         name: "Nairobi Susu Savings",
-        creator: "alice-orbit-24237.testnet",
+        creator: "alice-ajo-26192.testnet",
         cadence: "Daily (24 hours)",
         contribution: 1,
         collateralPerMember: 1,
         currentRound: 1,
         totalRounds: 2,
         status: "Active",
-        members: ["alice-orbit-24237.testnet", "bob-orbit-24237.testnet"],
-        payoutOrder: ["alice-orbit-24237.testnet", "bob-orbit-24237.testnet"],
-        paidThisRound: ["alice-orbit-24237.testnet"],
+        members: ["alice-ajo-26192.testnet", "bob-ajo-26192.testnet"],
+        payoutOrder: ["alice-ajo-26192.testnet", "bob-ajo-26192.testnet"],
+        paidThisRound: ["alice-ajo-26192.testnet"],
         paidRecipients: [],
         pot: 1,
         defaulted: [],
         memberCollateral: {
-          "alice-orbit-24237.testnet": 1,
-          "bob-orbit-24237.testnet": 1
+          "alice-ajo-26192.testnet": 1,
+          "bob-ajo-26192.testnet": 1
         }
       }
     ];
@@ -700,7 +700,7 @@
             return {
               id: c.id,
               name: c.name,
-              creator: c.creator || (c.members && c.members[0]) || "alice-orbit-24237.testnet",
+              creator: c.creator || (c.members && c.members[0]) || "alice-ajo-26192.testnet",
               cadence: c.round_duration_ms >= 86400000 ? "Daily (24 hours)" : `${Math.round(c.round_duration_ms / 1000)}s round`,
               contribution: yoctoToNearNumber(c.contribution_amount),
               collateralPerMember: yoctoToNearNumber(c.collateral_per_member),
@@ -1723,7 +1723,7 @@
 
       const isPendingInit = Boolean(txHash || startPending);
       const newId = `circle_${circlesData.length + 1}`;
-      const pool = [currentProfile.handle, "alice-orbit-24237.testnet", "bob-orbit-24237.testnet", "charlie.testnet"];
+      const pool = [currentProfile.handle, "alice-ajo-26192.testnet", "bob-ajo-26192.testnet", "charlie.testnet"];
       const uniqueMembers = isPendingInit ? [currentProfile.handle] : [...new Set(pool)].slice(0, size);
       while (!isPendingInit && uniqueMembers.length < size) {
         uniqueMembers.push(`member${uniqueMembers.length + 1}.testnet`);
@@ -1783,40 +1783,40 @@
     applyProfileToUI();
     renderCircles();
     appendKeeperLog(`Keeper Agent initialized. Monitoring contract ${TESTNET_CONTRACT_ID} (Auto-Pilot: ON).`, true);
-    appendKeeperLog(`Verified Circle #1 [Lagos Tech Founders Ajo]: Round 1 settled on-chain (Tx: 7iakkTbQ...); active at Round 2/2.`);
+    appendKeeperLog(`Verified Circle #1 [Lagos Tech Founders Ajo]: Round 1 settled on-chain (Tx: 2KGKa1L7...); active at Round 2/2.`);
     appendKeeperLog(`Verified Circle #2 [Nairobi Susu Savings]: Active at Round 1/2 (1/2 deposits in escrow).`);
 
     addFeedEntry(
-      "Deploy Hardened WASM Contract (orbit-v2-24237.testnet)",
-      "Compiled AssemblyScript WASM (36,930 bytes) deployed to NEAR Testnet",
+      "Deploy Hardened WASM Contract (ajo-26192.testnet)",
+      "Compiled AssemblyScript WASM (36,925 bytes) deployed to NEAR Testnet",
       "36.9 KB WASM",
       "Confirmed On-Chain",
       true,
-      "27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn"
+      "qGXo8V1cgxQ6VXKDJBRv72eWjEjQfPicpfzN7xHbzXE"
     );
     addFeedEntry(
       "Initialize Contract State (init)",
-      "Counter initialized with re-init guard on orbit-v2-24237.testnet",
+      "Counter initialized with re-init guard on ajo-26192.testnet",
       "0.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu"
+      "GMijkee9pkaLgUsZ1GYaRRMgakxgahgj8gW3MA2YXLUY"
     );
     addFeedEntry(
       "Create Circle #1: Lagos Tech Founders Ajo",
-      "alice-orbit-24237.testnet staked 1 NEAR (N-1)x collateral on NEAR Testnet",
+      "alice-ajo-26192.testnet staked 1 NEAR (N-1)x collateral on NEAR Testnet",
       "-1.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs"
+      "BxpgfJnCpZzeKHaMeSa7EnCB4FcBBDKN1nx4eTJxUvRA"
     );
     addFeedEntry(
       "Join Circle #1 & Sort Payout Order",
-      "bob-orbit-24237.testnet staked 1 NEAR collateral -> Circle #1 Activated",
+      "bob-ajo-26192.testnet staked 1 NEAR collateral -> Circle #1 Activated",
       "-1.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN"
+      "2fCF2X3M9f9nBrx5kLDC4KdDQxZPgxHyfphh3qxtnbc6"
     );
     addFeedEntry(
       "Round 1 Deposits (Alice & Bob)",
@@ -1824,23 +1824,23 @@
       "+2.00 NEAR Pot",
       "+15 Credit Score",
       true,
-      "F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs"
+      "3MBAagDNzdgbfS96cv5Dt2poZsGCMs1919tvbzECAHXi"
     );
     addFeedEntry(
       "Permissionless claim_payout (Circle #1 Round 1)",
-      "2 NEAR pot disbursed on-chain to alice-orbit-24237.testnet; advanced to Round 2",
+      "2 NEAR pot disbursed on-chain to alice-ajo-26192.testnet; advanced to Round 2",
       "+2.00 NEAR Disbursed",
       "Round 1 Settled",
       true,
-      "7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6"
+      "2KGKa1L7G1Fe3DVikNMn36tBxAUztgcw3iGd6VA4Mkbj"
     );
     addFeedEntry(
       "Circle #2 Round 1 Deposit (Nairobi Susu Savings)",
-      "alice-orbit-24237.testnet deposited 1 NEAR on-chain (1/2 paid)",
+      "alice-ajo-26192.testnet deposited 1 NEAR on-chain (1/2 paid)",
       "+1.00 NEAR Pot",
       "Confirmed On-Chain",
       true,
-      "DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ"
+      "ACi6UFCvdHisyUPKh1pLAWtFxasAeZhycjD4wLPkcL8b"
     );
 
     // Sync live state from https://rpc.testnet.near.org on startup

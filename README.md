@@ -1,4 +1,4 @@
-# Orbit Protocol 🌐⭕
+# Ajo 🌐⭕
 
 > **Decentralized Rotating Savings & Credit Associations (ROSCAs) with `(N - 1) × C` Anti-Ghosting Collateral & Soulbound Reputation on NEAR Protocol**
 
@@ -9,30 +9,30 @@ Submitted for the **[NEAR Hackathon: Build Beyond Boundaries](https://nearhackat
 
 ## 🔗 Live NEAR Testnet Deployment & On-Chain Proof
 
-Orbit Protocol is compiled to native WebAssembly (`contracts/build/orbit_contract.wasm`, 36,930 bytes) and deployed live on **NEAR Testnet**:
+Ajo is compiled to native WebAssembly (`contracts/build/orbit_contract.wasm`, 36,925 bytes) and deployed live on **NEAR Testnet**:
 
-* **Contract Account ID:** [`orbit-v2-24237.testnet`](https://testnet.nearblocks.io/address/orbit-v2-24237.testnet)
-* **Testnet Participant Accounts:** [`alice-orbit-24237.testnet`](https://testnet.nearblocks.io/address/alice-orbit-24237.testnet), [`bob-orbit-24237.testnet`](https://testnet.nearblocks.io/address/bob-orbit-24237.testnet)
+* **Contract Account ID:** [`ajo-26192.testnet`](https://testnet.nearblocks.io/address/ajo-26192.testnet)
+* **Testnet Participant Accounts:** [`alice-ajo-26192.testnet`](https://testnet.nearblocks.io/address/alice-ajo-26192.testnet), [`bob-ajo-26192.testnet`](https://testnet.nearblocks.io/address/bob-ajo-26192.testnet)
 * **Deployment Manifest:** [`contracts/testnet_deployment.json`](./contracts/testnet_deployment.json)
 
 | On-Chain Action | Method | NEAR Testnet Transaction Hash |
 | :--- | :--- | :--- |
-| **1. Deploy Compiled WASM (36,930 bytes)** | `DeployContract` | [`27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn`](https://testnet.nearblocks.io/txns/27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn) |
-| **2. Initialize Contract (Re-Init Guarded)** | `init` | [`HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu`](https://testnet.nearblocks.io/txns/HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu) |
-| **3. Create Circle #1 (1 NEAR + 1 NEAR Collateral)** | `create_circle` | [`5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs`](https://testnet.nearblocks.io/txns/5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs) |
-| **4. Join & Activate Circle #1** | `join_circle` | [`4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN`](https://testnet.nearblocks.io/txns/4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN) |
-| **5. Round 1 Deposit (Alice)** | `deposit` | [`JBsWL3SdpoZ8XKFHtiJpNgGrAFQQrD5kxAU8kf9af6af`](https://testnet.nearblocks.io/txns/JBsWL3SdpoZ8XKFHtiJpNgGrAFQQrD5kxAU8kf9af6af) |
-| **6. Round 1 Deposit (Bob)** | `deposit` | [`F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs`](https://testnet.nearblocks.io/txns/F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs) |
-| **7. Permissionless Round 1 Pot Disbursement** | `claim_payout` | [`7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6`](https://testnet.nearblocks.io/txns/7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6) |
-| **8. Circle #2 Active Round 1 Deposit** | `deposit` | [`DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ`](https://testnet.nearblocks.io/txns/DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ) |
+| **1. Deploy Compiled WASM (36,925 bytes)** | `DeployContract` | [`qGXo8V1cgxQ6VXKDJBRv72eWjEjQfPicpfzN7xHbzXE`](https://testnet.nearblocks.io/txns/qGXo8V1cgxQ6VXKDJBRv72eWjEjQfPicpfzN7xHbzXE) |
+| **2. Initialize Contract (Re-Init Guarded)** | `init` | [`GMijkee9pkaLgUsZ1GYaRRMgakxgahgj8gW3MA2YXLUY`](https://testnet.nearblocks.io/txns/GMijkee9pkaLgUsZ1GYaRRMgakxgahgj8gW3MA2YXLUY) |
+| **3. Create Circle #1 (1 NEAR + 1 NEAR Collateral)** | `create_circle` | [`BxpgfJnCpZzeKHaMeSa7EnCB4FcBBDKN1nx4eTJxUvRA`](https://testnet.nearblocks.io/txns/BxpgfJnCpZzeKHaMeSa7EnCB4FcBBDKN1nx4eTJxUvRA) |
+| **4. Join & Activate Circle #1** | `join_circle` | [`2fCF2X3M9f9nBrx5kLDC4KdDQxZPgxHyfphh3qxtnbc6`](https://testnet.nearblocks.io/txns/2fCF2X3M9f9nBrx5kLDC4KdDQxZPgxHyfphh3qxtnbc6) |
+| **5. Round 1 Deposit (Alice)** | `deposit` | [`9XrPVm8c6WRKC589SD1UP5Sw4pwMAMfRXyNFHxEFe9hg`](https://testnet.nearblocks.io/txns/9XrPVm8c6WRKC589SD1UP5Sw4pwMAMfRXyNFHxEFe9hg) |
+| **6. Round 1 Deposit (Bob)** | `deposit` | [`3MBAagDNzdgbfS96cv5Dt2poZsGCMs1919tvbzECAHXi`](https://testnet.nearblocks.io/txns/3MBAagDNzdgbfS96cv5Dt2poZsGCMs1919tvbzECAHXi) |
+| **7. Permissionless Round 1 Pot Disbursement** | `claim_payout` | [`2KGKa1L7G1Fe3DVikNMn36tBxAUztgcw3iGd6VA4Mkbj`](https://testnet.nearblocks.io/txns/2KGKa1L7G1Fe3DVikNMn36tBxAUztgcw3iGd6VA4Mkbj) |
+| **8. Circle #2 Active Round 1 Deposit** | `deposit` | [`ACi6UFCvdHisyUPKh1pLAWtFxasAeZhycjD4wLPkcL8b`](https://testnet.nearblocks.io/txns/ACi6UFCvdHisyUPKh1pLAWtFxasAeZhycjD4wLPkcL8b) |
 
 ---
 
-## ⚡ How Orbit Solves Traditional ROSCA & Smart Contract Security Failures
+## ⚡ How Ajo Solves Traditional ROSCA & Smart Contract Security Failures
 
-Over 1 billion people save hundreds of billions of dollars annually in informal rotating savings clubs (*Ajo* in Nigeria, *Tandas* in Mexico, *Susu* in Ghana, *Chit Funds* in India). Orbit enforces mathematical, economic, and smart-contract invariants on-chain:
+Over 1 billion people save hundreds of billions of dollars annually in informal rotating savings clubs (*Ajo* in Nigeria, *Tandas* in Mexico, *Susu* in Ghana, *Chit Funds* in India). Ajo enforces mathematical, economic, and smart-contract invariants on-chain:
 
-| Vulnerability | Orbit On-Chain Mechanism (`contracts/src/index.ts` & `near_runtime.ts`) |
+| Vulnerability | Ajo On-Chain Mechanism (`contracts/src/index.ts` & `near_runtime.ts`) |
 | :--- | :--- |
 | **1. Early-Recipient Ghosting (Scenario A)** | **Full `(N - 1) × C` Anti-Ghosting Collateral:** Every participant stakes `(total_members - 1) × contribution_amount` upon creating or joining a circle. Even if the Round 1 recipient collects the `N × C` pot and ghosts all remaining `N - 1` rounds, their net profit is `N·C - C - (N-1)·C = 0` (`profit ≤ 0`), and their seized collateral funds all remaining rounds for honest members. |
 | **2. Locked Funds on Termination (Scenario A2 & H2)** | **`withdraw_on_termination` & Strict Conservation of Value:** If an active circle defaults unrecoverably or expires past its deadline, honest members can trigger atomic termination to immediately withdraw 100% of their collateral and uncollected deposits (`sum(out) == sum(in)`, `0` stranded funds), with a strict guard against double-settlement. |
@@ -40,7 +40,7 @@ Over 1 billion people save hundreds of billions of dollars annually in informal 
 | **4. Sybil Score Farming & Late Deposits (Scenario C)** | **1 NEAR Floor & Deadline Enforcement:** `create_circle` enforces `contribution_amount >= 1 NEAR` (`10^24` yoctoNEAR) to prevent 1-yoctoNEAR dust circles, and `deposit` only awards the `+15` reputation bonus if `block_timestamp <= round_deadline`. |
 | **5. Delimiter Injection, Key Confusion & Overflow (E1–E3, H1)** | **Token-Aware JSON Parsing & Strict Sanitization:** `findJsonKeyValueStart` strictly distinguishes JSON keys (followed by `:`) from string values. `isSafeText` and `isSafeIdentifier` reject `|`, `"`, `\`, `,`, and control characters across all entrypoints. Numeric inputs are capped at 36 digits (`u128`) and 18 digits (`i64`) to prevent overflow. `init()` checks `!storageHasKey("counter")` to prevent re-initialization. |
 | **6. Cancel Griefing in Pending Circles (G1)** | **Creator-Only Cancel & Individual Member Exit:** `cancel_pending_circle` is restricted strictly to the circle creator with a 100% refund. Non-creator joined members call `leave_pending_circle` to safely exit with their collateral without destroying the circle for other prospective members. |
-| **7. Storage State Exhaustion (G2)** | **Automatic Storage Reclamation (`storageRemove`):** NEAR Protocol requires 1 NEAR per 100 KB of state storage. Orbit cleans up `col:...` and `cp:...` storage keys upon circle cancellation, member exits, termination, and completion, preventing unbounded state bloat. |
+| **7. Storage State Exhaustion (G2)** | **Automatic Storage Reclamation (`storageRemove`):** NEAR Protocol requires 1 NEAR per 100 KB of state storage. Ajo cleans up `col:...` and `cp:...` storage keys upon circle cancellation, member exits, termination, and completion, preventing unbounded state bloat. |
 
 > [!NOTE]
 > **Economic Design Note on Collateral & Financial Inclusion:**
@@ -58,7 +58,7 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
   npm --prefix contracts run build
   ```
 * **See Y:**
-  Compiles `contracts/src/index.ts` and `contracts/src/near_runtime.ts` via AssemblyScript (`asc`) into `contracts/build/orbit_contract.wasm` (36,930 bytes) with exit code `0`.
+  Compiles `contracts/src/index.ts` and `contracts/src/near_runtime.ts` via AssemblyScript (`asc`) into `contracts/build/orbit_contract.wasm` (36,925 bytes) with exit code `0`.
 
 ### Step 2: Run the WASM invariant tests, the relay policy, and the keeper
 `contracts/src/harness.mjs` loads and executes the compiled `contracts/build/orbit_contract.wasm` binary directly inside Node's native `WebAssembly` VM (instantiating fresh WASM instances, enforcing NEAR host registers, `u128` little-endian deposits, atomic state rollback on panic, `storageRemove` state deletion, and `ProhibitedInView` read-only enforcement on `@view` methods).
@@ -69,7 +69,7 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
   ```
 * **See Y:**
   ```text
-  ▶ Orbit Protocol: Compiled WASM Smart Contract & Security Invariants
+  ▶ Ajo: Compiled WASM Smart Contract & Security Invariants
     ✔ 1. should require (N-1)*contribution collateral and sort payout_order by on-chain reputation score
     ✔ 2. should enforce exact deposits and allow permissionless keeper claims
     ✔ 3. should seize collateral, slash reputation (-150), and cover pot when member defaults
@@ -93,9 +93,9 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
   ✔ 21. [Stablecoin] Circle collateral and the pot move as fungible-token calls, not NEAR
   ✔ 22. [Gasless relay] sponsors round deposits and refuses collateral, vouch, and payout
   ✔ 23. [Intents] dry quote body cannot create a deposit address
-  ✔ Orbit Protocol: Compiled WASM Smart Contract & Security Invariants (pass 21 | fail 0)
+  ✔ Ajo: Compiled WASM Smart Contract & Security Invariants (pass 21 | fail 0)
 
-  === ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===
+  === AJO: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===
   [Keeper Agent] Scanning active circles via get_circles view...
   [Keeper Agent] Circle "Autonomous Test Circle" [circle_1]: Round 1 status: 2/2 paid.
   [Keeper Agent] All round deposits settled! Executing permissionless claim_payout...
@@ -112,9 +112,9 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
   ```
 * **See Y:**
   ```text
-  === ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT (LIVE NEAR TESTNET) ===
+  === AJO: AUTONOMOUS KEEPER AGENT (LIVE NEAR TESTNET) ===
   [Keeper Agent] Connected to RPC: https://rpc.testnet.near.org
-  [Keeper Agent] Monitoring Target Contract: orbit-v2-24237.testnet
+  [Keeper Agent] Monitoring Target Contract: ajo-26192.testnet
   [Keeper Agent] Found 2 circle(s) on NEAR Testnet.
   [Keeper Agent] Circle "Lagos Tech Founders Ajo" [circle_1]: Status=Active, Round 2/2, Deposits=0/2
   [Keeper Agent] Circle "Nairobi Susu Savings" [circle_2]: Status=Active, Round 1/2, Deposits=1/2
@@ -125,7 +125,7 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
 * **Do X:**
   Open `frontend/index.html` in any browser.
 * **See Y:**
-  1. **Live NEAR Testnet RPC Sync:** On load, the app queries `https://rpc.testnet.near.org` (`call_function` on `orbit-v2-24237.testnet`) to fetch live circles (`get_circles`) and reputation profiles (`get_reputation_profile`). The live views include `token_id`, `credit_members`, `vouchers`, and `collateral_bps`. Tests 19–21 run the credit, soulbound, and stablecoin rules against this same WASM.
+  1. **Live NEAR Testnet RPC Sync:** On load, the app queries `https://rpc.testnet.near.org` (`call_function` on `ajo-26192.testnet`) to fetch live circles (`get_circles`) and reputation profiles (`get_reputation_profile`). The live views include `token_id`, `credit_members`, `vouchers`, and `collateral_bps`. Tests 19–21 run the credit, soulbound, and stablecoin rules against this same WASM.
    2. **Writes:** The page can simulate a circle locally, or sign with a testnet account from **Sign Up / Live Signer**. The simulator labels every write `Simulated locally`. The judge-facing proof of credit, the soulbound pass, and stablecoin payouts is `npm test`, tests 19–21.
    3. **Honest Dual Write Mode (Local Simulator vs. Live In-Browser Testnet Signer):**
      * Using the pre-loaded demo personas explicitly labels actions `(Simulated)` with toast notifications clarifying `Simulated locally`.
@@ -142,7 +142,7 @@ The relayer may sponsor gas for a round `deposit` only. It refuses `vouch`, `cla
   ```
 * **See Y:**
   ```text
-  ok  orbit deposit: NEAR round deposit on the Orbit contract
+  ok  orbit deposit: NEAR round deposit on the Ajo contract
   ok  stablecoin deposit message: stablecoin round deposit
   ok  collateral message: relayer only sponsors deposit messages on the stablecoin
   ok  vouch: relayer refuses vouch
@@ -175,11 +175,11 @@ Prize NEAR is paid on mainnet. Put a mainnet account in `nearAddress`. The value
 │   └── build.yml                   # CI workflow: compiles WASM & runs 18-test suite
 ├── contracts/
 │   ├── build/
-│   │   └── orbit_contract.wasm     # Compiled NEAR WebAssembly smart contract binary (36,930 bytes)
+│   │   └── orbit_contract.wasm     # Compiled NEAR WebAssembly smart contract binary (36,925 bytes)
 │   ├── scripts/
 │   │   └── deploy_testnet.mjs      # Live NEAR Testnet deployment & verification script
 │   ├── src/
-│   │   ├── index.ts                # Orbit smart contract implementation (AssemblyScript)
+│   │   ├── index.ts                # Ajo smart contract implementation (AssemblyScript)
 │   │   ├── near_runtime.ts         # NEAR VM host bindings, token-aware JSON parser & u128 math
 │   │   ├── types.ts                # Data model definitions
 │   │   ├── harness.mjs             # Node WebAssembly VM host executing orbit_contract.wasm
@@ -202,4 +202,4 @@ Prize NEAR is paid on mainnet. Put a mainnet account in `nearAddress`. The value
 ---
 
 ## 📜 License
-MIT License — Copyright (c) 2026 Orbit Protocol Contributors
+MIT License — Copyright (c) 2026 Ajo Contributors

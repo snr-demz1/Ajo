@@ -1,4 +1,4 @@
-// Orbit Protocol WASM VM Execution Harness
+// Ajo WASM VM Execution Harness
 // Loads and executes the compiled `contracts/build/orbit_contract.wasm` directly in Node's WebAssembly VM,
 // providing NEAR Protocol host bindings (registers, storage, u128 deposits, promises, and view enforcement).
 

@@ -2,7 +2,7 @@
 
 export function evaluateRelay({ receiverId, methodName, args, orbitContractId, stablecoinId }) {
   if (methodName === "deposit" && receiverId === orbitContractId) {
-    return { ok: true, reason: "NEAR round deposit on the Orbit contract" };
+    return { ok: true, reason: "NEAR round deposit on the Ajo contract" };
   }
   if (methodName === "ft_transfer_call" && receiverId === stablecoinId) {
     const msg = args && typeof args.msg === "string" ? args.msg : "";

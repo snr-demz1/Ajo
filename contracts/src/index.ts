@@ -165,7 +165,7 @@ function writeNft(accountId: string): void {
   const json =
     '{"token_id":"' + accountId +
     '","owner_id":"' + accountId +
-    '","soulbound":true,"metadata":{"title":"Orbit Reputation Pass","description":"Non-transferable credit pass. The score sets how much collateral this account must lock.","extra":"score=' +
+    '","soulbound":true,"metadata":{"title":"Ajo Reputation Pass","description":"Non-transferable credit pass. The score sets how much collateral this account must lock.","extra":"score=' +
     score.toString() + ";tier=" + tier + ";collateral_bps=" + bps.toString() +
     '"}}';
   storageWrite("nft:" + accountId, json);

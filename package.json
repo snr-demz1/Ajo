@@ -1,7 +1,7 @@
 {
-  "name": "orbit-protocol",
+  "name": "ajo",
   "version": "1.0.0",
-  "description": "Decentralized Rotating Savings & Credit Associations (ROSCAs) with Soulbound Reputation on NEAR Protocol",
+  "description": "Ajo is a rotating savings circle with a soulbound credit pass on NEAR",
   "private": true,
   "scripts": {
     "build": "npm --prefix contracts run build",
@@ -26,7 +26,7 @@
     "real-world-money",
     "soulbound-nft"
   ],
-  "author": "Orbit Team",
+  "author": "Ajo",
   "license": "MIT",
   "dependencies": {
     "assemblyscript": "^0.28.20",

@@ -1,5 +1,5 @@
 /**
- * Orbit Protocol — Live NEAR Testnet Deployment & On-Chain Verification Script
+ * Ajo — Live NEAR Testnet Deployment & On-Chain Verification Script
  *
  * 1. Provisions Testnet accounts via NEAR Testnet Helper (https://helper.testnet.near.org/account)
  * 2. Deploys compiled `contracts/build/orbit_contract.wasm` to NEAR Testnet
@@ -54,7 +54,7 @@ function getTxHash(outcome) {
 }
 
 async function main() {
-  console.log("=== ORBIT PROTOCOL: LIVE NEAR TESTNET DEPLOYMENT ===");
+  console.log("=== AJO: LIVE NEAR TESTNET DEPLOYMENT ===");
 
   if (!fs.existsSync(WASM_PATH)) {
     throw new Error(`WASM binary not found at ${WASM_PATH}. Run 'npm --prefix contracts run build' first.`);
@@ -63,9 +63,9 @@ async function main() {
   console.log(`Loaded compiled WASM binary (${wasmBytes.length} bytes).`);
 
   const suffix = Math.floor(10000 + Math.random() * 89999);
-  const contractId = `orbit-v2-${suffix}.testnet`;
-  const aliceId = `alice-orbit-${suffix}.testnet`;
-  const bobId = `bob-orbit-${suffix}.testnet`;
+  const contractId = `ajo-${suffix}.testnet`;
+  const aliceId = `alice-ajo-${suffix}.testnet`;
+  const bobId = `bob-ajo-${suffix}.testnet`;
 
   console.log(`1. Creating Testnet accounts via ${HELPER_URL}...`);
   const contractAcc = await createTestnetAccount(contractId);

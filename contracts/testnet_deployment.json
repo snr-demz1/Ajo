@@ -1,53 +1,53 @@
 {
   "network": "testnet",
   "rpc_url": "https://rpc.testnet.near.org",
-  "contract_id": "orbit-v2-24237.testnet",
-  "explorer_account_url": "https://testnet.nearblocks.io/address/orbit-v2-24237.testnet",
-  "deployed_at": "2026-11-12T17:32:25.529Z",
+  "contract_id": "ajo-26192.testnet",
+  "explorer_account_url": "https://testnet.nearblocks.io/address/ajo-26192.testnet",
+  "deployed_at": "2026-11-12T18:02:23.951Z",
   "participants": {
-    "alice": "alice-orbit-24237.testnet",
-    "bob": "bob-orbit-24237.testnet"
+    "alice": "alice-ajo-26192.testnet",
+    "bob": "bob-ajo-26192.testnet"
   },
   "transactions": {
     "deploy_wasm": {
-      "hash": "27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn",
-      "explorer_url": "https://testnet.nearblocks.io/txns/27htawdyhqP7WbFkcrDZx4LzYeqQAepPfAFcQjcqqUcn"
+      "hash": "qGXo8V1cgxQ6VXKDJBRv72eWjEjQfPicpfzN7xHbzXE",
+      "explorer_url": "https://testnet.nearblocks.io/txns/qGXo8V1cgxQ6VXKDJBRv72eWjEjQfPicpfzN7xHbzXE"
     },
     "init": {
-      "hash": "HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu",
-      "explorer_url": "https://testnet.nearblocks.io/txns/HTFBkxKTxkZ34TaYPeFvDiQMPEW1rbS3BG2k7JWKE2Uu"
+      "hash": "GMijkee9pkaLgUsZ1GYaRRMgakxgahgj8gW3MA2YXLUY",
+      "explorer_url": "https://testnet.nearblocks.io/txns/GMijkee9pkaLgUsZ1GYaRRMgakxgahgj8gW3MA2YXLUY"
     },
     "create_circle_1": {
-      "hash": "5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs",
-      "explorer_url": "https://testnet.nearblocks.io/txns/5R9zq3qHk9ZgGKBmNqf9pHNnFDgBLTDdRb2XJV3x2exs"
+      "hash": "BxpgfJnCpZzeKHaMeSa7EnCB4FcBBDKN1nx4eTJxUvRA",
+      "explorer_url": "https://testnet.nearblocks.io/txns/BxpgfJnCpZzeKHaMeSa7EnCB4FcBBDKN1nx4eTJxUvRA"
     },
     "join_circle_1": {
-      "hash": "4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN",
-      "explorer_url": "https://testnet.nearblocks.io/txns/4AemD7ehDiSoJMAmU7H9t2GGrQKFJuEh4rKi4YERxDkN"
+      "hash": "2fCF2X3M9f9nBrx5kLDC4KdDQxZPgxHyfphh3qxtnbc6",
+      "explorer_url": "https://testnet.nearblocks.io/txns/2fCF2X3M9f9nBrx5kLDC4KdDQxZPgxHyfphh3qxtnbc6"
     },
     "deposit_circle_1_alice": {
-      "hash": "JBsWL3SdpoZ8XKFHtiJpNgGrAFQQrD5kxAU8kf9af6af",
-      "explorer_url": "https://testnet.nearblocks.io/txns/JBsWL3SdpoZ8XKFHtiJpNgGrAFQQrD5kxAU8kf9af6af"
+      "hash": "9XrPVm8c6WRKC589SD1UP5Sw4pwMAMfRXyNFHxEFe9hg",
+      "explorer_url": "https://testnet.nearblocks.io/txns/9XrPVm8c6WRKC589SD1UP5Sw4pwMAMfRXyNFHxEFe9hg"
     },
     "deposit_circle_1_bob": {
-      "hash": "F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs",
-      "explorer_url": "https://testnet.nearblocks.io/txns/F6bmTe7zjDGNYcZXFceth7mN4C5TUeZhyn3Qw8ucvQXs"
+      "hash": "3MBAagDNzdgbfS96cv5Dt2poZsGCMs1919tvbzECAHXi",
+      "explorer_url": "https://testnet.nearblocks.io/txns/3MBAagDNzdgbfS96cv5Dt2poZsGCMs1919tvbzECAHXi"
     },
     "claim_payout_circle_1_round_1": {
-      "hash": "7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6",
-      "explorer_url": "https://testnet.nearblocks.io/txns/7iakkTbQR33wGuxyqAnrpfdEA6c3PKpYhswwnWgF2YS6"
+      "hash": "2KGKa1L7G1Fe3DVikNMn36tBxAUztgcw3iGd6VA4Mkbj",
+      "explorer_url": "https://testnet.nearblocks.io/txns/2KGKa1L7G1Fe3DVikNMn36tBxAUztgcw3iGd6VA4Mkbj"
     },
     "create_circle_2": {
-      "hash": "6Lf9A8EhUhuEfySQwrV9LuXoaiNwPbqXvA8eT7bxtXga",
-      "explorer_url": "https://testnet.nearblocks.io/txns/6Lf9A8EhUhuEfySQwrV9LuXoaiNwPbqXvA8eT7bxtXga"
+      "hash": "67UU9gBNwMtPTs6gnTQZsmREwcmMWmyimS19mrcJYYtV",
+      "explorer_url": "https://testnet.nearblocks.io/txns/67UU9gBNwMtPTs6gnTQZsmREwcmMWmyimS19mrcJYYtV"
     },
     "join_circle_2": {
-      "hash": "5R1vvyQmX6GwiXbn3f5gmiaydNjDsPdpQEJkT2ghDAg",
-      "explorer_url": "https://testnet.nearblocks.io/txns/5R1vvyQmX6GwiXbn3f5gmiaydNjDsPdpQEJkT2ghDAg"
+      "hash": "pLfgtt78uU58oBfZBikQ7djo8xFjCXJYxuqUXWXwNu7",
+      "explorer_url": "https://testnet.nearblocks.io/txns/pLfgtt78uU58oBfZBikQ7djo8xFjCXJYxuqUXWXwNu7"
     },
     "deposit_circle_2_alice": {
-      "hash": "DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ",
-      "explorer_url": "https://testnet.nearblocks.io/txns/DtZoUZt86yBs2foZk9WB5ab1EZSSVYjgL47FchWMdLEJ"
+      "hash": "ACi6UFCvdHisyUPKh1pLAWtFxasAeZhycjD4wLPkcL8b",
+      "explorer_url": "https://testnet.nearblocks.io/txns/ACi6UFCvdHisyUPKh1pLAWtFxasAeZhycjD4wLPkcL8b"
     }
   },
   "verified_state_snapshot": {
@@ -55,28 +55,28 @@
       {
         "id": "circle_1",
         "name": "Lagos Tech Founders Ajo",
-        "creator": "alice-orbit-24237.testnet",
+        "creator": "alice-ajo-26192.testnet",
         "contribution_amount": "1000000000000000000000000",
         "collateral_per_member": "1000000000000000000000000",
         "round_duration_ms": 86400000,
         "total_members": 2,
         "members": [
-          "alice-orbit-24237.testnet",
-          "bob-orbit-24237.testnet"
+          "alice-ajo-26192.testnet",
+          "bob-ajo-26192.testnet"
         ],
         "payout_order": [
-          "alice-orbit-24237.testnet",
-          "bob-orbit-24237.testnet"
+          "alice-ajo-26192.testnet",
+          "bob-ajo-26192.testnet"
         ],
         "current_round": 2,
-        "round_start_time": 1794504709608,
-        "round_deadline": 1794591109608,
+        "round_start_time": 1794506508615,
+        "round_deadline": 1794592908615,
         "status": "Active",
         "total_pot": "0",
         "round_paid_members": {
           "1": [
-            "alice-orbit-24237.testnet",
-            "bob-orbit-24237.testnet"
+            "alice-ajo-26192.testnet",
+            "bob-ajo-26192.testnet"
           ],
           "2": []
         },
@@ -85,12 +85,12 @@
           "2": false
         },
         "member_collateral": {
-          "alice-orbit-24237.testnet": "1000000000000000000000000",
-          "bob-orbit-24237.testnet": "1000000000000000000000000"
+          "alice-ajo-26192.testnet": "1000000000000000000000000",
+          "bob-ajo-26192.testnet": "1000000000000000000000000"
         },
         "defaulted_members": [],
         "paid_recipients": [
-          "alice-orbit-24237.testnet"
+          "alice-ajo-26192.testnet"
         ],
         "token_id": "",
         "credit_members": [],
@@ -99,27 +99,27 @@
       {
         "id": "circle_2",
         "name": "Nairobi Susu Savings",
-        "creator": "alice-orbit-24237.testnet",
+        "creator": "alice-ajo-26192.testnet",
         "contribution_amount": "1000000000000000000000000",
         "collateral_per_member": "1000000000000000000000000",
         "round_duration_ms": 86400000,
         "total_members": 2,
         "members": [
-          "alice-orbit-24237.testnet",
-          "bob-orbit-24237.testnet"
+          "alice-ajo-26192.testnet",
+          "bob-ajo-26192.testnet"
         ],
         "payout_order": [
-          "alice-orbit-24237.testnet",
-          "bob-orbit-24237.testnet"
+          "alice-ajo-26192.testnet",
+          "bob-ajo-26192.testnet"
         ],
         "current_round": 1,
-        "round_start_time": 1794504726937,
-        "round_deadline": 1794591126937,
+        "round_start_time": 1794506525617,
+        "round_deadline": 1794592925617,
         "status": "Active",
         "total_pot": "1000000000000000000000000",
         "round_paid_members": {
           "1": [
-            "alice-orbit-24237.testnet"
+            "alice-ajo-26192.testnet"
           ],
           "2": []
         },
@@ -128,8 +128,8 @@
           "2": false
         },
         "member_collateral": {
-          "alice-orbit-24237.testnet": "1000000000000000000000000",
-          "bob-orbit-24237.testnet": "1000000000000000000000000"
+          "alice-ajo-26192.testnet": "1000000000000000000000000",
+          "bob-ajo-26192.testnet": "1000000000000000000000000"
         },
         "defaulted_members": [],
         "paid_recipients": [],
@@ -139,8 +139,8 @@
       }
     ],
     "reputation_profiles": {
-      "alice-orbit-24237.testnet": {
-        "account_id": "alice-orbit-24237.testnet",
+      "alice-ajo-26192.testnet": {
+        "account_id": "alice-ajo-26192.testnet",
         "circles_completed": 0,
         "on_time_payments": 2,
         "missed_payments": 0,
@@ -149,8 +149,8 @@
         "collateral_bps": 10000,
         "collateral_slashed_total": "0"
       },
-      "bob-orbit-24237.testnet": {
-        "account_id": "bob-orbit-24237.testnet",
+      "bob-ajo-26192.testnet": {
+        "account_id": "bob-ajo-26192.testnet",
         "circles_completed": 0,
         "on_time_payments": 1,
         "missed_payments": 0,

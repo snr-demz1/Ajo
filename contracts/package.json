@@ -1,7 +1,7 @@
 {
-  "name": "orbit-protocol-contracts",
+  "name": "ajo-contracts",
   "version": "1.0.0",
-  "description": "Smart contracts for Orbit: Rotating Savings Circles with Soulbound Reputation Passes on NEAR Protocol",
+  "description": "Ajo smart contract: rotating savings circles with a soulbound credit pass on NEAR",
   "main": "build/orbit_contract.wasm",
   "scripts": {
     "build": "asc src/index.ts -o build/orbit_contract.wasm -O3 --runtime stub --use abort=src/near_runtime/customAbort --disable bulk-memory --disable sign-extension --disable nontrapping-f2i",

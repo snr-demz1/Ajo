@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { evaluateRelay, RELAY_FIXTURES } from "../src/relay_policy.mjs";
 import { buildDryQuote, pickUsdcPair } from "../src/intents_quote.mjs";
 
-describe("Orbit winning-path checks", () => {
+describe("Ajo winning-path checks", () => {
   it("22. [Gasless relay] sponsors round deposits and refuses collateral, vouch, and payout", () => {
     for (const fixture of RELAY_FIXTURES) {
       const result = evaluateRelay({

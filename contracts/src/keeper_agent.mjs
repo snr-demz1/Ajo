@@ -1,5 +1,5 @@
 /**
- * Orbit Protocol - Autonomous Keeper Agent
+ * Ajo - Autonomous Keeper Agent
  *
  * Automatically monitors active savings circles on the compiled NEAR WASM contract.
  * When all round contributions settle in escrow, the keeper triggers `claim_payout`
@@ -82,7 +82,7 @@ if (process.argv[1] && process.argv[1].endsWith("keeper_agent.mjs")) {
   const isTestnet = process.argv.includes("--testnet");
 
   if (isTestnet) {
-    console.log("=== ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT (LIVE NEAR TESTNET) ===");
+    console.log("=== AJO: AUTONOMOUS KEEPER AGENT (LIVE NEAR TESTNET) ===");
     const fs = await import("node:fs");
     const path = await import("node:path");
     const { fileURLToPath } = await import("node:url");
@@ -171,7 +171,7 @@ if (process.argv[1] && process.argv[1].endsWith("keeper_agent.mjs")) {
     }
     console.log("=== Keeper Agent Testnet poll cycle completed successfully! ===");
   } else {
-    console.log("=== ORBIT PROTOCOL: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===");
+    console.log("=== AJO: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===");
     const harness = new OrbitContractHarness();
 
     // 2-member circle: required collateral is (2 - 1) * 10 NEAR = 10 NEAR
