@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { OrbitContractHarness, CircleStatus, ReputationTier } from "../src/harness.mjs";
+import { OrbitKeeperAgent } from "../src/keeper_agent.mjs";
 
 const ONE_NEAR = 1_000_000_000_000_000_000_000_000n;
 const FIVE_NEAR = 5n * ONE_NEAR;
@@ -559,6 +560,100 @@ describe("Orbit Protocol: Compiled WASM Smart Contract & Security Invariants", (
 
     // Storage key was removed via storageRemove() to reclaim trie storage
     assert.equal(contract.storage.has(colKey), false);
+  });
+
+  it("16. [Exploit H1] Prevents JSON key-value confusion when a field value equals a JSON key name", () => {
+    const contract = new OrbitContractHarness();
+
+    // Even if `name` is literally "round_duration_ms" and `total_members` appears before `round_duration_ms`,
+    // token-aware JSON parsing only matches keys followed by ':' and never confuses values with keys
+    contract.setCaller("alice.near", ONE_NEAR);
+    const circle_id = contract._invoke(
+      "create_circle",
+      {
+        name: "round_duration_ms",
+        total_members: 2,
+        round_duration_ms: 60000,
+        contribution_amount: ONE_NEAR.toString()
+      },
+      false
+    );
+    const circle = contract.getCircle({ circle_id });
+    assert.equal(circle.name, "round_duration_ms");
+    assert.equal(circle.total_members, 2);
+    assert.equal(circle.round_duration_ms, 60000);
+  });
+
+  it("17. [Invariant H2] Enforces 100% conservation of value on Round-1 termination and blocks double-settlement", () => {
+    const contract = new OrbitContractHarness();
+    const requiredCollateral = 2n * TEN_NEAR;
+
+    // 3 members each stake 20 NEAR collateral (60 NEAR total collateral)
+    contract.setCaller("alice.near", requiredCollateral);
+    const circle_id = contract.createCircle({
+      name: "Round1 Conservation Circle",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 3
+    });
+    contract.setCaller("bob.near", requiredCollateral);
+    contract.joinCircle({ circle_id });
+    contract.setCaller("charlie.near", requiredCollateral);
+    contract.joinCircle({ circle_id });
+
+    // Round 1: Bob deposits 10 NEAR; Alice and Charlie miss the deadline
+    contract.setCaller("bob.near", TEN_NEAR);
+    contract.deposit({ circle_id });
+    contract.advanceTime(70000);
+
+    // Keeper reports Alice's default (10 NEAR seized into pot), thenCharlie still hasn't paid -> Bob calls withdraw_on_termination
+    contract.setCaller("keeper.near", 0n);
+    contract.reportDefault({ circle_id, defaulter_id: "alice.near" });
+
+    contract.setCaller("bob.near", 0n);
+    contract.withdrawOnTermination({ circle_id });
+
+    // Total funds put into the contract: 3 * 20 NEAR collateral + 10 NEAR Bob deposit = 70 NEAR
+    const totalIn = 3n * requiredCollateral + TEN_NEAR;
+    const totalOut = contract.transfers.reduce((acc, t) => acc + t.amount, 0n);
+    assert.equal(totalOut, totalIn, "Every single yoctoNEAR must be accounted for with 0 stranded funds");
+
+    // Calling withdraw_on_termination a second time on the already-settled circle must be rejected
+    assert.throws(
+      () => contract.withdrawOnTermination({ circle_id }),
+      /Terminated circle has already been settled and refunded/
+    );
+  });
+
+  it("18. [Keeper Agent] Automatically slashes expired-round defaulters and settles payout in a single poll cycle", async () => {
+    const contract = new OrbitContractHarness();
+    const keeper = new OrbitKeeperAgent(contract, "autonomous-keeper.testnet");
+
+    contract.setCaller("alice.near", TEN_NEAR);
+    const circle_id = contract.createCircle({
+      name: "Keeper Auto-Slash Circle",
+      contribution_amount: TEN_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+    contract.setCaller("bob.near", TEN_NEAR);
+    contract.joinCircle({ circle_id });
+
+    // Alice deposits on time; Bob misses the deadline
+    contract.setCaller("alice.near", TEN_NEAR);
+    contract.deposit({ circle_id });
+    contract.advanceTime(70000);
+
+    // Single keeper poll cycle detects expired deadline, calls report_default on Bob, and immediately claims payout for Alice
+    await keeper.runPollCycle();
+
+    const updated = contract.getCircle({ circle_id });
+    assert.equal(updated.status, CircleStatus.Completed);
+    const aliceReceived = contract.transfers
+      .filter((t) => t.to === "alice.near")
+      .reduce((acc, t) => acc + t.amount, 0n);
+    // Alice received 20 NEAR Round 1 pot + 10 NEAR collateral refund = 30 NEAR
+    assert.equal(aliceReceived, 3n * TEN_NEAR);
   });
 
 });

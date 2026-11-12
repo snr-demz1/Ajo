@@ -94,7 +94,7 @@
           <div id="nav-avatar" class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-[10px] font-bold text-black">
             A
           </div>
-          <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">alice-orbit-20234.testnet</span>
+          <span id="user-display-handle" class="mono text-xs font-semibold text-slate-200">alice-orbit-87299.testnet</span>
           <span id="nav-tier-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Bronze</span>
         </button>
       </div>
@@ -108,7 +108,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold mono text-[10px]">LIVE CONTRACT</span>
         <span>Deployed on NEAR Testnet:</span>
-        <a id="contract-explorer-link" href="https://testnet.nearblocks.io/address/orbit-v2-20234.testnet" target="_blank" rel="noopener noreferrer" class="mono font-bold text-[#00EC97] hover:underline">orbit-v2-20234.testnet ↗</a>
+        <a id="contract-explorer-link" href="https://testnet.nearblocks.io/address/orbit-v2-87299.testnet" target="_blank" rel="noopener noreferrer" class="mono font-bold text-[#00EC97] hover:underline">orbit-v2-87299.testnet ↗</a>
         <span id="signing-mode-badge" class="ml-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-semibold">Write Mode: Local Simulator (Provision Live Signer in Sign Up for On-Chain Tx)</span>
       </div>
       <div class="flex items-center gap-3 text-[11px] text-slate-400">
@@ -179,11 +179,11 @@
           <div class="flex items-end justify-between relative z-10 pt-2 border-t border-white/10">
             <div>
               <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Account</span>
-              <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">alice-orbit-20234.testnet</span>
+              <span id="card-owner" class="mono text-xs font-bold text-white tracking-wide">alice-orbit-87299.testnet</span>
             </div>
             <div class="text-right">
               <span class="text-[9px] uppercase tracking-wider text-slate-400 block font-semibold">Contract</span>
-              <span class="mono text-xs font-bold text-[#00EC97]">orbit-v2-20234.testnet</span>
+              <span class="mono text-xs font-bold text-[#00EC97]">orbit-v2-87299.testnet</span>
             </div>
           </div>
 
@@ -278,7 +278,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-xl font-bold text-white">Active &amp; Pending Savings Circles</h2>
-          <p class="text-xs text-slate-400">Live rotational state machines fetched from <code class="mono text-slate-300">orbit-v2-20234.testnet</code> via <code class="mono text-slate-300">get_circles</code>.</p>
+          <p class="text-xs text-slate-400">Live rotational state machines fetched from <code class="mono text-slate-300">orbit-v2-87299.testnet</code> via <code class="mono text-slate-300">get_circles</code>.</p>
         </div>
       </div>
 
@@ -294,7 +294,7 @@
           <h3 class="text-base font-bold text-white">Verified Protocol Activity &amp; On-Chain Transactions</h3>
           <p class="text-xs text-slate-400">Click any transaction hash to inspect its execution receipt on NearBlocks Testnet Explorer</p>
         </div>
-        <a href="https://testnet.nearblocks.io/address/orbit-v2-20234.testnet" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[#00EC97] hover:underline">View Contract on NearBlocks ↗</a>
+        <a href="https://testnet.nearblocks.io/address/orbit-v2-87299.testnet" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[#00EC97] hover:underline">View Contract on NearBlocks ↗</a>
       </div>
 
       <div id="personal-feed" class="divide-y divide-white/5 text-xs">
@@ -310,7 +310,7 @@
         <div>
           <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">On-Chain Soulbound Credential (Non-Transferable)</span>
           <h3 class="text-lg font-bold text-white mt-0.5">Verifiable Credit Passport JSON</h3>
-          <p class="text-xs text-slate-400">Queried via <code class="mono text-slate-200">get_reputation_profile</code> on <code class="mono text-[#00EC97]">orbit-v2-20234.testnet</code></p>
+          <p class="text-xs text-slate-400">Queried via <code class="mono text-slate-200">get_reputation_profile</code> on <code class="mono text-[#00EC97]">orbit-v2-87299.testnet</code></p>
         </div>
         <button onclick="closeModal('passport-modal')" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
       </div>
@@ -356,12 +356,12 @@
 
       <div class="space-y-3.5 text-xs">
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Your Display Name</label>
+          <label for="signup-fullname" class="block text-slate-300 font-semibold mb-1">Your Display Name</label>
           <input id="signup-fullname" type="text" placeholder="e.g. Alex Rivera" class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
         </div>
 
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">NEAR Testnet Handle Prefix</label>
+          <label for="signup-handle" class="block text-slate-300 font-semibold mb-1">NEAR Testnet Handle Prefix</label>
           <div class="flex">
             <input id="signup-handle" type="text" placeholder="alex-orbit" class="flex-1 px-3.5 py-2.5 rounded-l-xl bg-white/5 border border-white/10 border-r-0 text-white mono focus:outline-none focus:border-emerald-500">
             <span class="px-3 py-2.5 rounded-r-xl bg-white/10 border border-white/10 text-slate-400 mono">.testnet</span>
@@ -425,23 +425,24 @@
 
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Circle Name (2–64 safe chars: A-Z, 0-9, space, -_#.)</label>
+          <label for="circle-title-input" class="block text-slate-300 font-semibold mb-1">Circle Name (2–64 safe chars: A-Z, 0-9, space, -_#.)</label>
           <input id="circle-title-input" type="text" value="Community Builders Pot" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Contribution / Round (min 1 NEAR)</label>
+            <label for="circle-amt-input" class="block text-slate-300 font-semibold mb-1">Contribution / Round (min 1 NEAR)</label>
             <input id="circle-amt-input" type="number" value="1" min="1" max="1000" oninput="updateCollateralPreview()" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="block text-slate-300 font-semibold mb-1">Total Members (2–20)</label>
+            <label for="circle-size-input" class="block text-slate-300 font-semibold mb-1">Total Members (2–20)</label>
             <input id="circle-size-input" type="number" value="2" min="2" max="20" oninput="updateCollateralPreview()" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
           </div>
         </div>
         <div>
-          <label class="block text-slate-300 font-semibold mb-1">Cadence / Payout Interval</label>
+          <label for="circle-cadence-input" class="block text-slate-300 font-semibold mb-1">Cadence / Payout Interval</label>
           <select id="circle-cadence-input" class="w-full px-3 py-2.5 rounded-xl bg-[#161B22] border border-white/10 text-white focus:outline-none focus:border-emerald-500">
             <option value="Daily (24 hours)">Daily (24 hours)</option>
+            <option value="Fast Demo (60 seconds)">Fast Demo (60 seconds)</option>
             <option value="Weekly (7 days)">Weekly (7 days)</option>
             <option value="Monthly (30 days)">Monthly (30 days)</option>
           </select>
@@ -469,7 +470,7 @@
     const TESTNET_RPC_URL = "https://rpc.testnet.near.org";
     const TESTNET_RPC_ENDPOINTS = ["https://rpc.testnet.near.org", "https://test.rpc.fastnear.com"];
     const TESTNET_HELPER_URL = "https://helper.testnet.near.org/account";
-    const TESTNET_CONTRACT_ID = "orbit-v2-20234.testnet";
+    const TESTNET_CONTRACT_ID = "orbit-v2-87299.testnet";
     const YOCTO_PER_NEAR = 1e24;
 
     const KEYPAIRS_STORAGE_KEY = "orbit_live_keypairs_v2";
@@ -498,8 +499,8 @@
         }
       } catch (_) {}
       return [
-        { handle: "alice-orbit-20234.testnet", name: "Alice", score: 530, onTime: 2, missed: 0, avatar: "A", isLiveSigner: false },
-        { handle: "bob-orbit-20234.testnet", name: "Bob", score: 515, onTime: 1, missed: 0, avatar: "B", isLiveSigner: false },
+        { handle: "alice-orbit-87299.testnet", name: "Alice", score: 530, onTime: 2, missed: 0, avatar: "A", isLiveSigner: false },
+        { handle: "bob-orbit-87299.testnet", name: "Bob", score: 515, onTime: 1, missed: 0, avatar: "B", isLiveSigner: false },
         { handle: "charlie.testnet", name: "Charlie", score: 620, onTime: 8, missed: 0, avatar: "C", isLiveSigner: false }
       ];
     }
@@ -523,48 +524,48 @@
 
     let currentProfile = userProfiles[0];
 
-    // Initial state mirrors live on-chain state of `orbit-v2-20234.testnet` and updates dynamically via RPC sync
+    // Initial state mirrors live on-chain state of `orbit-v2-87299.testnet` and updates dynamically via RPC sync
     let circlesData = [
       {
         id: "circle_1",
         name: "Lagos Tech Founders Ajo",
-        creator: "alice-orbit-20234.testnet",
+        creator: "alice-orbit-87299.testnet",
         cadence: "Daily (24 hours)",
         contribution: 1,
         collateralPerMember: 1,
         currentRound: 2,
         totalRounds: 2,
         status: "Active",
-        members: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
-        payoutOrder: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
+        members: ["alice-orbit-87299.testnet", "bob-orbit-87299.testnet"],
+        payoutOrder: ["alice-orbit-87299.testnet", "bob-orbit-87299.testnet"],
         paidThisRound: [],
-        paidRecipients: ["alice-orbit-20234.testnet"],
+        paidRecipients: ["alice-orbit-87299.testnet"],
         pot: 0,
         defaulted: [],
         memberCollateral: {
-          "alice-orbit-20234.testnet": 1,
-          "bob-orbit-20234.testnet": 1
+          "alice-orbit-87299.testnet": 1,
+          "bob-orbit-87299.testnet": 1
         }
       },
       {
         id: "circle_2",
         name: "Nairobi Susu Savings",
-        creator: "alice-orbit-20234.testnet",
+        creator: "alice-orbit-87299.testnet",
         cadence: "Daily (24 hours)",
         contribution: 1,
         collateralPerMember: 1,
         currentRound: 1,
         totalRounds: 2,
         status: "Active",
-        members: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
-        payoutOrder: ["alice-orbit-20234.testnet", "bob-orbit-20234.testnet"],
-        paidThisRound: ["alice-orbit-20234.testnet"],
+        members: ["alice-orbit-87299.testnet", "bob-orbit-87299.testnet"],
+        payoutOrder: ["alice-orbit-87299.testnet", "bob-orbit-87299.testnet"],
+        paidThisRound: ["alice-orbit-87299.testnet"],
         paidRecipients: [],
         pot: 1,
         defaulted: [],
         memberCollateral: {
-          "alice-orbit-20234.testnet": 1,
-          "bob-orbit-20234.testnet": 1
+          "alice-orbit-87299.testnet": 1,
+          "bob-orbit-87299.testnet": 1
         }
       }
     ];
@@ -681,7 +682,7 @@
             return {
               id: c.id,
               name: c.name,
-              creator: c.creator || (c.members && c.members[0]) || "alice-orbit-20234.testnet",
+              creator: c.creator || (c.members && c.members[0]) || "alice-orbit-87299.testnet",
               cadence: c.round_duration_ms >= 86400000 ? "Daily (24 hours)" : `${Math.round(c.round_duration_ms / 1000)}s round`,
               contribution: yoctoToNearNumber(c.contribution_amount),
               collateralPerMember: yoctoToNearNumber(c.collateral_per_member),
@@ -1176,7 +1177,7 @@
         actions.appendChild(disburseBtn);
 
         // Default & Termination / Cancel Pending Controls
-        if (!isPending) {
+        if (isActive && circle.paidThisRound.length < circle.totalRounds) {
           const slashBtn = document.createElement('button');
           slashBtn.className = "flex-1 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/15 border border-red-500/20 text-[11px] font-semibold text-red-300 transition flex items-center justify-center gap-1";
           slashBtn.textContent = `⚠️ Report Default ${modeSuffix}`;
@@ -1184,16 +1185,20 @@
           actions.appendChild(slashBtn);
         }
 
-        const termBtn = document.createElement('button');
-        termBtn.className = "py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-[11px] font-semibold text-amber-300 transition";
-        if (isPending) {
-          const isCreator = (currentProfile.handle === circle.creator);
-          termBtn.textContent = isCreator ? `🛡️ Cancel Pending Circle ${modeSuffix}` : `🚪 Leave Pending Circle ${modeSuffix}`;
-        } else {
-          termBtn.textContent = `🛡️ Withdraw on Termination ${modeSuffix}`;
+        const hasRemainingCollateral = Object.values(circle.memberCollateral || {}).some(v => v > 0);
+        const canTerminateOrExit = (isPending && isMember) || isActive || (circle.status === "Terminated" && (circle.pot > 0 || hasRemainingCollateral));
+        if (canTerminateOrExit) {
+          const termBtn = document.createElement('button');
+          termBtn.className = "py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-[11px] font-semibold text-amber-300 transition";
+          if (isPending) {
+            const isCreator = (currentProfile.handle === circle.creator);
+            termBtn.textContent = isCreator ? `🛡️ Cancel Pending Circle ${modeSuffix}` : `🚪 Leave Pending Circle ${modeSuffix}`;
+          } else {
+            termBtn.textContent = `🛡️ Withdraw on Termination ${modeSuffix}`;
+          }
+          termBtn.onclick = () => executeTerminateAndRefund(circle.id);
+          actions.appendChild(termBtn);
         }
-        termBtn.onclick = () => executeTerminateAndRefund(circle.id);
-        actions.appendChild(termBtn);
 
         card.appendChild(actions);
         grid.appendChild(card);
@@ -1489,7 +1494,7 @@
       renderCircles();
     }
 
-    function executeDefaulterSimulation(circleId) {
+    async function executeDefaulterSimulation(circleId) {
       const circle = circlesData.find(c => c.id === circleId);
       if (!circle || circle.status !== "Active") return;
 
@@ -1498,6 +1503,17 @@
       if (!unpaid) {
         showToast("All members have already deposited for this round!", "error");
         return;
+      }
+
+      let txHash = null;
+      if (currentProfile.isLiveSigner) {
+        try {
+          showToast(`Signing on-chain report_default(${unpaid}) transaction on NEAR Testnet...`);
+          txHash = await callNearChangeIfLive("report_default", { circle_id: circleId, defaulter_id: unpaid }, 0);
+        } catch (err) {
+          showToast(`On-chain tx error: ${err.message}`, "error");
+          return;
+        }
       }
 
       if (!circle.memberCollateral) circle.memberCollateral = {};
@@ -1518,7 +1534,12 @@
         applyProfileToUI();
         renderCircles();
         appendKeeperLog(`Collateral exhausted for defaulter ${unpaid} in [${circle.id}] -> Circle TERMINATED. Honest members can now call withdraw_on_termination.`, true);
-        showToast(`Simulated locally: Collateral exhausted for ${unpaid}. Circle Terminated — click Withdraw on Termination to refund honest members.`, "error");
+        showToast(
+          txHash
+            ? `⚡ On-chain report_default confirmed (Circle Terminated)! Tx: ${txHash.slice(0, 10)}...`
+            : `Simulated locally: Collateral exhausted for ${unpaid}. Circle Terminated — click Withdraw on Termination to refund honest members.`,
+          "error"
+        );
         return;
       }
 
@@ -1536,15 +1557,31 @@
         `Seized ${circle.contribution} NEAR from (N-1)x collateral (${circle.memberCollateral[unpaid]} NEAR remaining). Defaulter skipped for future payouts.`,
         `+${circle.contribution}.00 NEAR (Collateral)`,
         "-150 Score Slashed",
-        false
+        false,
+        txHash
       );
 
-      showToast(`Simulated locally: Seized ${circle.contribution} NEAR collateral from ${unpaid}; defaulter banned from future payouts.`);
+      showToast(
+        txHash
+          ? `⚡ On-chain report_default confirmed! Tx: ${txHash.slice(0, 10)}...`
+          : `Simulated locally: Seized ${circle.contribution} NEAR collateral from ${unpaid}; defaulter banned from future payouts.`
+      );
+
+      // If Keeper Auto-Pilot is ON and collateral seizure completed the round pot, auto-settle!
+      const autoPilot = document.getElementById('keeper-autopilot-toggle')?.checked;
+      if (autoPilot && circle.paidThisRound.length >= circle.totalRounds) {
+        appendKeeperLog(`Collateral seizure completed pot (${circle.paidThisRound.length}/${circle.totalRounds}) in [${circle.id}]. Auto-executing permissionless claim_payout in 600ms...`, true);
+        setTimeout(() => {
+          if (circle.status === "Active" && circle.paidThisRound.length >= circle.totalRounds) {
+            executeCircleClaim(circle.id, true);
+          }
+        }, 600);
+      }
     }
 
     async function executeTerminateAndRefund(circleId) {
       const circle = circlesData.find(c => c.id === circleId);
-      if (!circle) return;
+      if (!circle || circle.status === "Completed") return;
 
       const isPending = circle.status === "Pending";
       const isCreator = (currentProfile.handle === circle.creator);
@@ -1571,6 +1608,7 @@
         // Non-creator left pending circle: circle stays Pending for others!
         circle.members = circle.members.filter(m => m !== currentProfile.handle);
         circle.payoutOrder = circle.payoutOrder.filter(m => m !== currentProfile.handle);
+        if (circle.memberCollateral) delete circle.memberCollateral[currentProfile.handle];
         renderCircles();
         addFeedEntry(
           `leave_pending_circle(${circle.id}) Executed`,
@@ -1597,6 +1635,7 @@
       const refundPerHonest = isPending ? colAmt : (colAmt + circle.contribution);
       circle.pot = 0;
       circle.paidThisRound = [];
+      circle.memberCollateral = {};
 
       renderCircles();
 
@@ -1636,6 +1675,11 @@
         return;
       }
 
+      let durationMs = 86400000;
+      if (cadence.includes("60 seconds")) durationMs = 60000;
+      else if (cadence.includes("7 days")) durationMs = 604800000;
+      else if (cadence.includes("30 days")) durationMs = 2592000000;
+
       const requiredCollateral = (size - 1) * amt;
       let txHash = null;
 
@@ -1648,7 +1692,7 @@
             {
               name: title,
               contribution_amount: contributionYocto,
-              round_duration_ms: 86400000,
+              round_duration_ms: durationMs,
               total_members: size
             },
             requiredCollateral
@@ -1661,7 +1705,7 @@
 
       const isPendingInit = Boolean(txHash || startPending);
       const newId = `circle_${circlesData.length + 1}`;
-      const pool = [currentProfile.handle, "alice-orbit-20234.testnet", "bob-orbit-20234.testnet", "charlie.testnet"];
+      const pool = [currentProfile.handle, "alice-orbit-87299.testnet", "bob-orbit-87299.testnet", "charlie.testnet"];
       const uniqueMembers = isPendingInit ? [currentProfile.handle] : [...new Set(pool)].slice(0, size);
       while (!isPendingInit && uniqueMembers.length < size) {
         uniqueMembers.push(`member${uniqueMembers.length + 1}.testnet`);
@@ -1721,40 +1765,40 @@
     applyProfileToUI();
     renderCircles();
     appendKeeperLog(`Keeper Agent initialized. Monitoring contract ${TESTNET_CONTRACT_ID} (Auto-Pilot: ON).`, true);
-    appendKeeperLog(`Verified Circle #1 [Lagos Tech Founders Ajo]: Round 1 settled on-chain (Tx: Aba5qdyW...); active at Round 2/2.`);
+    appendKeeperLog(`Verified Circle #1 [Lagos Tech Founders Ajo]: Round 1 settled on-chain (Tx: 911pM3bB...); active at Round 2/2.`);
     appendKeeperLog(`Verified Circle #2 [Nairobi Susu Savings]: Active at Round 1/2 (1/2 deposits in escrow).`);
 
     addFeedEntry(
-      "Deploy Hardened WASM Contract (orbit-v2-20234.testnet)",
-      "Compiled AssemblyScript WASM (27,480 bytes) deployed to NEAR Testnet",
-      "27.5 KB WASM",
+      "Deploy Hardened WASM Contract (orbit-v2-87299.testnet)",
+      "Compiled AssemblyScript WASM (28,260 bytes) deployed to NEAR Testnet",
+      "28.3 KB WASM",
       "Confirmed On-Chain",
       true,
-      "8B94PG26DE2xhuKisDbYZJRuBeJAUkmQCwCCkhne3ZEH"
+      "C6mUBA645sQfaqGbxRYQoojfzEdhrwwyhSWEoJ1YAKQs"
     );
     addFeedEntry(
       "Initialize Contract State (init)",
-      "Counter initialized with re-init guard on orbit-v2-20234.testnet",
+      "Counter initialized with re-init guard on orbit-v2-87299.testnet",
       "0.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "8hxakoF1xKxGECVs4mqT9axuax3wqNLYNT62tGVFYVg"
+      "8knkXDCrWHmUy7jrJF6L9MUTFj8VgjVbc5iKbwUDZv2d"
     );
     addFeedEntry(
       "Create Circle #1: Lagos Tech Founders Ajo",
-      "alice-orbit-20234.testnet staked 1 NEAR (N-1)x collateral on NEAR Testnet",
+      "alice-orbit-87299.testnet staked 1 NEAR (N-1)x collateral on NEAR Testnet",
       "-1.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "BCg7pmsEUKnQbFfXwianXWbcqp9vNDDQHLfFfBnUAzFe"
+      "3hmSWSZ4up44HzFZWJhWWVZHsTWfvyEYZwx36VBMGmef"
     );
     addFeedEntry(
       "Join Circle #1 & Sort Payout Order",
-      "bob-orbit-20234.testnet staked 1 NEAR collateral -> Circle #1 Activated",
+      "bob-orbit-87299.testnet staked 1 NEAR collateral -> Circle #1 Activated",
       "-1.00 NEAR",
       "Confirmed On-Chain",
       true,
-      "HMSzwKeyurr7Lnu8v5MdBtKC5zcxQMtDqw7tHq3arMYV"
+      "2iiGpP7WPgC4SUSuv25VyfEPSqqEXLZqioF3R1L1RKDV"
     );
     addFeedEntry(
       "Round 1 Deposits (Alice & Bob)",
@@ -1762,23 +1806,23 @@
       "+2.00 NEAR Pot",
       "+15 Credit Score",
       true,
-      "FSKoqTsx3hqEMajPbG5bY4CVSABC1y8resYhcEykuLE"
+      "2LPrSJ85WgfsEgffNuTUxVMgQE8n1qw7Co9DL3b1tjMR"
     );
     addFeedEntry(
       "Permissionless claim_payout (Circle #1 Round 1)",
-      "2 NEAR pot disbursed on-chain to alice-orbit-20234.testnet; advanced to Round 2",
+      "2 NEAR pot disbursed on-chain to alice-orbit-87299.testnet; advanced to Round 2",
       "+2.00 NEAR Disbursed",
       "Round 1 Settled",
       true,
-      "Aba5qdyWFcVWy2rgqQvrBXCsow563DLqyiLXQTndQbS8"
+      "911pM3bBRsiNXYw8QyTLSRyUeCY1ywTjLwHgWqGkr9Rw"
     );
     addFeedEntry(
       "Circle #2 Round 1 Deposit (Nairobi Susu Savings)",
-      "alice-orbit-20234.testnet deposited 1 NEAR on-chain (1/2 paid)",
+      "alice-orbit-87299.testnet deposited 1 NEAR on-chain (1/2 paid)",
       "+1.00 NEAR Pot",
       "Confirmed On-Chain",
       true,
-      "4SiGEWRnQ8UZQkxMtzMMXmSpwF5UJ9TU5asmvJdJzLAU"
+      "5xWfwLtbjd9Tn6V5tLWqRgTESTSXDzkFtuxsWaH9dUvT"
     );
 
     // Sync live state from https://rpc.testnet.near.org on startup

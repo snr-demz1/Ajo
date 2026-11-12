@@ -58,6 +58,20 @@ export class OrbitKeeperAgent {
             this.log(`Member ${member} default processed (${outcome}): collateral seized & reputation slashed.`);
           }
         }
+
+        // If collateral seizure completed the round pot, immediately disburse in the same cycle
+        const afterDefault = this.contract.getCircle({ circle_id: circle.id });
+        const updatedPaid = (afterDefault.round_paid_members && afterDefault.round_paid_members[round]) || [];
+        if (afterDefault.status === "Active" && updatedPaid.length === afterDefault.total_members) {
+          this.log(`Collateral seizure covered round pot! Executing permissionless claim_payout...`);
+          this.contract.setCaller(this.agentAccountId, 0n);
+          const recipient = this.contract.claimPayout({ circle_id: circle.id });
+          this.processedRounds.add(key);
+
+          const settled = this.contract.getCircle({ circle_id: circle.id });
+          this.log(`Disbursed pot to honest recipient ${recipient}.`);
+          this.log(`Circle now at Round ${settled.current_round} (Status: ${settled.status}).`);
+        }
       }
     }
   }
@@ -126,12 +140,33 @@ if (process.argv[1] && process.argv[1].endsWith("keeper_agent.mjs")) {
 
     console.log(`[Keeper Agent] Found ${circles.length} circle(s) on NEAR Testnet.`);
 
+    const keeperAccountId = process.env.NEAR_KEEPER_ACCOUNT_ID;
+    const keeperSecretKey = process.env.NEAR_KEEPER_PRIVATE_KEY;
+    let liveAccount = null;
+    if (keeperAccountId && keeperSecretKey) {
+      const { Account } = await import("near-api-js");
+      liveAccount = new Account(keeperAccountId, rpcUrl, keeperSecretKey);
+      console.log(`[Keeper Agent] Live Testnet Signer enabled: ${keeperAccountId}`);
+    }
+
     for (const c of circles) {
       const round = c.current_round;
       const paidList = (c.round_paid_members && c.round_paid_members[String(round)]) || [];
       console.log(`[Keeper Agent] Circle "${c.name}" [${c.id}]: Status=${c.status}, Round ${round}/${c.total_members}, Deposits=${paidList.length}/${c.total_members}`);
       if (c.status === "Active" && paidList.length >= c.total_members) {
         console.log(`[Keeper Agent] ⚡ Condition Met: Round ${round} fully funded! Ready for permissionless claim_payout.`);
+        if (liveAccount) {
+          const { teraToGas } = await import("near-api-js");
+          const outcome = await liveAccount.callFunctionRaw({
+            contractId,
+            methodName: "claim_payout",
+            args: { circle_id: c.id },
+            deposit: 0n,
+            gas: teraToGas("80")
+          });
+          const txHash = outcome?.transaction_outcome?.id || outcome?.transaction?.hash;
+          console.log(`[Keeper Agent] ✅ Executed on-chain claim_payout! Tx: https://testnet.nearblocks.io/txns/${txHash}`);
+        }
       }
     }
     console.log("=== Keeper Agent Testnet poll cycle completed successfully! ===");

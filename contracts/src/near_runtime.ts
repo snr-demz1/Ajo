@@ -243,16 +243,63 @@ export function u128IsZero(a: Uint8Array): bool {
 }
 
 // ------------------------------------------------------------
-// Lightweight JSON Field Extractors
+// Lightweight Token-Aware JSON Field Extractors
+// Strictly distinguishes JSON keys (followed by ':') from string values
 // ------------------------------------------------------------
 
+function findJsonKeyValueStart(json: string, key: string): i32 {
+  let i = 0;
+  const n = json.length;
+  while (i < n) {
+    const c = json.charCodeAt(i);
+    if (c == 34) {
+      // Parse string token
+      let strVal = "";
+      i++;
+      while (i < n) {
+        const sc = json.charCodeAt(i);
+        if (sc == 92) {
+          strVal += "\\";
+          if (i + 1 < n) {
+            strVal += String.fromCharCode(json.charCodeAt(i + 1));
+            i += 2;
+            continue;
+          }
+        }
+        if (sc == 34) {
+          i++;
+          break;
+        }
+        strVal += String.fromCharCode(sc);
+        i++;
+      }
+      // Skip whitespace after closing quote
+      while (i < n) {
+        const wc = json.charCodeAt(i);
+        if (wc == 32 || wc == 9 || wc == 10 || wc == 13) {
+          i++;
+        } else {
+          break;
+        }
+      }
+      // A JSON key is always immediately followed by ':'
+      if (i < n && json.charCodeAt(i) == 58) {
+        i++; // advance past ':'
+        if (strVal == key) {
+          return i;
+        }
+      }
+    } else {
+      i++;
+    }
+  }
+  return -1;
+}
+
 export function getJsonString(json: string, key: string): string {
-  const pattern = '"' + key + '"';
-  const idx = json.indexOf(pattern);
-  if (idx == -1) return "";
-  const colonIdx = json.indexOf(":", idx + pattern.length);
-  if (colonIdx == -1) return "";
-  const firstQuote = json.indexOf('"', colonIdx + 1);
+  const valStart = findJsonKeyValueStart(json, key);
+  if (valStart == -1) return "";
+  const firstQuote = json.indexOf('"', valStart);
   if (firstQuote == -1) return "";
   let out = "";
   let i = firstQuote + 1;
@@ -276,13 +323,20 @@ export function getJsonString(json: string, key: string): string {
 }
 
 export function getJsonNumber(json: string, key: string, defaultVal: i64 = 0): i64 {
-  const pattern = '"' + key + '"';
-  const idx = json.indexOf(pattern);
-  if (idx == -1) return defaultVal;
-  const colonIdx = json.indexOf(":", idx + pattern.length);
-  if (colonIdx == -1) return defaultVal;
-  let i = colonIdx + 1;
-  while (i < json.length && (json.charCodeAt(i) == 32 || json.charCodeAt(i) == 34)) i++;
+  let i = findJsonKeyValueStart(json, key);
+  if (i == -1) return defaultVal;
+  while (i < json.length) {
+    const wc = json.charCodeAt(i);
+    if (wc == 32 || wc == 9 || wc == 10 || wc == 13 || wc == 34) {
+      i++;
+    } else {
+      break;
+    }
+  }
+  if (i < json.length && json.charCodeAt(i) == 45) {
+    // Reject negative numbers
+    return defaultVal;
+  }
   let numStr = "";
   while (i < json.length) {
     const c = json.charCodeAt(i);
@@ -293,6 +347,6 @@ export function getJsonNumber(json: string, key: string, defaultVal: i64 = 0): i
       break;
     }
   }
-  if (numStr.length == 0) return defaultVal;
+  if (numStr.length == 0 || numStr.length > 18) return defaultVal;
   return I64.parseInt(numStr);
 }

@@ -795,20 +795,39 @@ export function withdraw_on_termination(): void {
     assertCondition(status == "Terminated", "Circle is not in Terminated state.");
   }
 
-  // Seize remaining collateral of all defaulted members into a recovery pool
+  // Prevent redundant re-settlement on an already-settled Terminated circle
+  let hasFundsToSettle = !u128IsZero(u128FromString(p[12]));
+  if (!hasFundsToSettle) {
+    for (let i = 0; i < members.length; i++) {
+      if (storageHasKey("col:" + circleId + ":" + members[i])) {
+        hasFundsToSettle = true;
+        break;
+      }
+    }
+  }
+  assertCondition(hasFundsToSettle, "Terminated circle has already been settled and refunded.");
+
+  // Seize remaining collateral of all defaulted members (plus any current-round pot share from defaulters) into recoveryPool
   let recoveryPool = u128FromString("0");
   for (let i = 0; i < defaulted.length; i++) {
-    const dKey = "col:" + circleId + ":" + defaulted[i];
+    const defId = defaulted[i];
+    const dKey = "col:" + circleId + ":" + defId;
     const dCol = u128FromString(storageRead(dKey, "0"));
     if (!u128IsZero(dCol)) {
       recoveryPool = u128Add(recoveryPool, dCol);
     }
     storageRemove(dKey);
+    if (arrayContains(paidThisRound, defId)) {
+      recoveryPool = u128Add(recoveryPool, contributionBytes);
+    }
   }
 
   // Refund every honest member's collateral + current-round deposit + prior-round contributions if unpaid
   const priorRoundsCount = round > 1 ? u32(round - 1) : 0;
   const priorContributionPerHonest = u128MulSmall(contributionBytes, priorRoundsCount);
+
+  const honestMembers = new Array<string>();
+  const honestRefunds = new Array<Uint8Array>();
 
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
@@ -832,9 +851,23 @@ export function withdraw_on_termination(): void {
         }
       }
 
-      if (!u128IsZero(refundBytes)) {
-        transferNear(m, refundBytes);
-      }
+      honestMembers.push(m);
+      honestRefunds.push(refundBytes);
+    }
+  }
+
+  // Strict Conservation of Value: sweep any remaining recoveryPool to honest members so 0 yoctoNEAR is ever stranded
+  if (!u128IsZero(recoveryPool)) {
+    if (honestRefunds.length > 0) {
+      honestRefunds[0] = u128Add(honestRefunds[0], recoveryPool);
+    } else {
+      transferNear(p[1], recoveryPool);
+    }
+  }
+
+  for (let i = 0; i < honestMembers.length; i++) {
+    if (!u128IsZero(honestRefunds[i])) {
+      transferNear(honestMembers[i], honestRefunds[i]);
     }
   }
 

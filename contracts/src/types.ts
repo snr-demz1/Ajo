@@ -28,8 +28,8 @@ export interface Circle {
   id: string;
   name: string;
   creator: AccountId;
-  contribution_amount: string;     // Exact amount per round in yoctoNEAR
-  collateral_per_member: string;   // Required collateral stake held in escrow (1 round's amount)
+  contribution_amount: string;     // Exact amount per round in yoctoNEAR (>= 10^24)
+  collateral_per_member: string;   // Required anti-ghosting collateral stake: (total_members - 1) * contribution_amount
   round_duration_ms: number;       // Duration of each round in milliseconds
   total_members: number;
   members: AccountId[];
@@ -43,4 +43,5 @@ export interface Circle {
   payout_claimed: Record<number, boolean>;
   member_collateral: Record<AccountId, string>; // Held collateral per member
   defaulted_members: AccountId[];
+  paid_recipients: AccountId[];
 }
