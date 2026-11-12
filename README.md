@@ -118,10 +118,12 @@ The Autonomous Keeper Agent includes a live network monitor mode that connects d
 * **Do X:**
   Open `frontend/index.html` in any browser.
 * **See Y:**
-  1. **Live NEAR Testnet RPC Sync:** On load, the app queries `https://rpc.testnet.near.org` (`call_function` on `orbit-v2-20234.testnet`) to fetch live circles (`get_circles`) and reputation profiles (`get_reputation_profile`).
-  2. **Honest Dual Write Mode (Local Simulator vs. Live In-Browser Testnet Signer):**
+  1. **Live NEAR Testnet RPC Sync (Multi-RPC Failover):** On load, the app queries `https://rpc.testnet.near.org` (with automatic failover to `https://test.rpc.fastnear.com`) on `orbit-v2-20234.testnet` to fetch live circles (`get_circles`) and reputation profiles (`get_reputation_profile`).
+  2. **Autonomous Keeper Agent Console (`orbit-keeper.testnet`):** Embedded directly in the dashboard with live execution logs, **Auto-Settle Ready Pots (Auto-Pilot)**, **"⚡ Run Keeper Poll Now"**, and **"🚀 1-Click Auto-Settle Demo"** to demonstrate permissionless `claim_payout` and `report_default` automation end-to-end.
+  3. **Verifiable Soulbound Credit Passport (`Verify JSON ↗`):** Clicking the metallic Soulbound Credential card opens the live `orbit-sbt-v1` on-chain JSON payload (`rep:<account_id>`) and tier progression roadmap (`Bronze` → `Silver` → `Gold` → `Platinum`).
+  4. **Honest Dual Write Mode (Local Simulator vs. Live In-Browser Testnet Signer):**
      * Using the pre-loaded demo personas explicitly labels actions `(Simulated)` with toast notifications clarifying `Simulated locally`.
-     * Clicking **"✨ Sign Up / Live Signer"** with **"Provision Live NEAR Testnet Account (10 NEAR Faucet)"** checked uses `near-api-js` in the browser to generate an Ed25519 keypair, fund a real `.testnet` account via `https://helper.testnet.near.org/account`, and sign live on-chain transactions (`create_circle`, `deposit`, `claim_payout`, `cancel_pending_circle`, `leave_pending_circle`, `withdraw_on_termination`) directly from the browser. Keypairs are persisted safely in local storage and can be backed up via the **"🔑 Export Key"** button.
+     * Clicking **"✨ Sign Up / Live Signer"** with **"Provision Live NEAR Testnet Account (10 NEAR Faucet)"** checked uses `near-api-js` in the browser to generate an Ed25519 keypair, fund a real `.testnet` account via `https://helper.testnet.near.org/account`, and sign live on-chain transactions (`create_circle`, `join_circle`, `deposit`, `claim_payout`, `cancel_pending_circle`, `leave_pending_circle`, `withdraw_on_termination`) directly from the browser. Keypairs are persisted safely in local storage and can be backed up via the **"🔑 Export Key"** button.
 
 ---
 
