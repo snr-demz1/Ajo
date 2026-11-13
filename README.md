@@ -9,7 +9,7 @@ Submitted for the **[NEAR Hackathon: Build Beyond Boundaries](https://nearhackat
 
 ## 🔗 Live NEAR Testnet Deployment & On-Chain Proof
 
-Ajo is compiled to native WebAssembly (`contracts/build/orbit_contract.wasm`, 36,925 bytes) and deployed live on **NEAR Testnet**:
+Ajo is compiled to native WebAssembly (`contracts/build/orbit_contract.wasm`, 37,803 bytes; historical Testnet deploy below at 36,925 bytes) and deployed live on **NEAR Testnet**:
 
 * **Contract Account ID:** [`ajo-26192.testnet`](https://testnet.nearblocks.io/address/ajo-26192.testnet)
 * **Testnet Participant Accounts:** [`alice-ajo-26192.testnet`](https://testnet.nearblocks.io/address/alice-ajo-26192.testnet), [`bob-ajo-26192.testnet`](https://testnet.nearblocks.io/address/bob-ajo-26192.testnet)
@@ -58,7 +58,7 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
   npm --prefix contracts run build
   ```
 * **See Y:**
-  Compiles `contracts/src/index.ts` and `contracts/src/near_runtime.ts` via AssemblyScript (`asc`) into `contracts/build/orbit_contract.wasm` (36,925 bytes) with exit code `0`.
+  Compiles `contracts/src/index.ts` and `contracts/src/near_runtime.ts` via AssemblyScript (`asc`) into `contracts/build/orbit_contract.wasm` (37,803 bytes) with exit code `0`.
 
 ### Step 2: Run the WASM invariant tests, the relay policy, and the keeper
 `contracts/src/harness.mjs` loads and executes the compiled `contracts/build/orbit_contract.wasm` binary directly inside Node's native `WebAssembly` VM (instantiating fresh WASM instances, enforcing NEAR host registers, `u128` little-endian deposits, atomic state rollback on panic, `storageRemove` state deletion, and `ProhibitedInView` read-only enforcement on `@view` methods).
@@ -88,12 +88,23 @@ Every command below runs out of the box on Windows, macOS, and Linux without ext
     ✔ 16. [Exploit H1] Prevents JSON key-value confusion when a field value equals a JSON key name
     ✔ 17. [Invariant H2] Enforces 100% conservation of value on Round-1 termination and blocks double-settlement
     ✔ 18. [Keeper Agent] Automatically slashes expired-round defaulters and settles payout in a single poll cycle
-  ✔ 19. [Credit] Silver pass locks half, voucher locks the rest, and ghosting still pays honest members
-  ✔ 20. [Soulbound NFT] Reputation pass is non-transferable and publishes the collateral rate
-  ✔ 21. [Stablecoin] Circle collateral and the pot move as fungible-token calls, not NEAR
-  ✔ 22. [Gasless relay] sponsors round deposits and refuses collateral, vouch, and payout
-  ✔ 23. [Intents] dry quote body cannot create a deposit address
-  ✔ Ajo: Compiled WASM Smart Contract & Security Invariants (pass 21 | fail 0)
+    ✔ 19. [Credit] Silver pass locks half, voucher locks the rest, and ghosting still pays honest members
+    ✔ 20. [Soulbound NFT] Reputation pass is non-transferable and publishes the collateral rate
+    ✔ 21. [Stablecoin] Circle collateral and the pot move as fungible-token calls, not NEAR
+    ✔ 24. [Capacity] Pending circle enforces member cap even before FT collateral locks
+    ✔ 25. [Stablecoin] applyDeposit rejects FT transfers to NEAR circles and wrong stablecoin tokens
+    ✔ 26. [Stablecoin] ft_on_transfer rejects malformed msg payloads and zero collateral
+    ✔ 27. [Keeper] Terminated default preserves zero marginal slash and stops keeper loop cleanly
+    ✔ 28. [Parser] JSON extraction ignores nested keys and non-string values and rejects i64 wraparound
+  ✔ Ajo: Compiled WASM Smart Contract & Security Invariants
+  ▶ Ajo winning-path checks
+    ✔ 22. [Gasless relay] sponsors round deposits and refuses collateral, vouch, and payout
+    ✔ 23. [Intents] dry quote body cannot create a deposit address
+    ✔ picks USDC on NEAR as the destination and a foreign USDC as the origin
+    ✔ refuses gasless relay when ft_transfer_call deposit targets wrong receiver_id
+    ✔ prefers EVM USDC origin chains ahead of non-EVM chains when both are present
+  ✔ Ajo winning-path checks
+  ℹ tests 31 | suites 2 | pass 31 | fail 0
 
   === AJO: AUTONOMOUS KEEPER AGENT TEST (WASM VM) ===
   [Keeper Agent] Scanning active circles via get_circles view...
@@ -176,12 +187,14 @@ That value is already in `submission.json`. Do not replace it with `ajo-26192.te
 
 ```text
 ├── .github/workflows/
-│   └── build.yml                   # CI workflow: compiles WASM & runs 18-test suite
+│   └── build.yml                   # CI workflow: compiles WASM & runs 31-test suite + keeper simulation
 ├── contracts/
 │   ├── build/
-│   │   └── orbit_contract.wasm     # Compiled NEAR WebAssembly smart contract binary (36,925 bytes)
+│   │   └── orbit_contract.wasm     # Compiled NEAR WebAssembly smart contract binary (37,803 bytes)
 │   ├── scripts/
-│   │   └── deploy_testnet.mjs      # Live NEAR Testnet deployment & verification script
+│   │   ├── deploy_testnet.mjs      # Live NEAR Testnet deployment & verification script
+│   │   ├── intents_quote.mjs       # Dry NEAR Intents USDC quote CLI
+│   │   └── relay_deposit.mjs       # Gasless relayer policy verification CLI
 │   ├── src/
 │   │   ├── index.ts                # Ajo smart contract implementation (AssemblyScript)
 │   │   ├── near_runtime.ts         # NEAR VM host bindings, token-aware JSON parser & u128 math
@@ -191,8 +204,8 @@ That value is already in `submission.json`. Do not replace it with `ajo-26192.te
 │   │   ├── relay_policy.mjs        # Gasless relayer policy: round deposits only
 │   │   └── intents_quote.mjs       # Dry NEAR Intents USDC quote
 │   ├── test/
-│   │   ├── orbit_test.mjs          # 21 security, credit, NFT, and stablecoin tests against WASM
-│   │   └── win_path.test.mjs       # Relay policy and dry-quote checks
+│   │   ├── orbit_test.mjs          # 26 security, credit, NFT, keeper, and stablecoin tests against WASM
+│   │   └── win_path.test.mjs       # 5 relay policy and dry-quote checks
 │   ├── package.json                # Contract build configuration
 │   └── testnet_deployment.json     # Public NEAR Testnet deployment manifest & tx hashes
 ├── frontend/

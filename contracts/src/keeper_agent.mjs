@@ -56,6 +56,9 @@ export class OrbitKeeperAgent {
             this.contract.setCaller(this.agentAccountId, 0n);
             const outcome = this.contract.reportDefault({ circle_id: circle.id, defaulter_id: member });
             this.log(`Member ${member} default processed (${outcome}): collateral seized & reputation slashed.`);
+            if (outcome === "Terminated") {
+              break;
+            }
           }
         }
 

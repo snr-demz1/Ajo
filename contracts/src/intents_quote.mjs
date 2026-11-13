@@ -36,11 +36,15 @@ function tokenList(payload) {
   return [];
 }
 
+const EVM_ORIGIN_CHAINS = new Set(["eth", "ethereum", "arb", "arbitrum", "base", "op", "optimism", "pol", "polygon", "bsc", "avax"]);
+
 export function pickUsdcPair(tokens) {
   const list = tokenList(tokens);
   const usdc = list.filter((token) => String(token.symbol || "").toUpperCase() === "USDC" && token.assetId);
   const onNear = usdc.find((token) => String(token.blockchain || "").toLowerCase() === "near");
-  const abroad = usdc.find((token) => String(token.blockchain || "").toLowerCase() !== "near");
+  const abroad =
+    usdc.find((token) => EVM_ORIGIN_CHAINS.has(String(token.blockchain || "").toLowerCase())) ||
+    usdc.find((token) => String(token.blockchain || "").toLowerCase() !== "near");
   if (!onNear || !abroad) {
     throw new Error("USDC on NEAR and USDC on another chain were not both in the token list");
   }

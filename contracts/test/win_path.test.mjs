@@ -40,4 +40,30 @@ describe("Ajo winning-path checks", () => {
     assert.equal(pair.destination.blockchain, "near");
     assert.equal(pair.origin.blockchain, "arb");
   });
+
+  it("refuses gasless relay when ft_transfer_call deposit targets wrong receiver_id", () => {
+    const result = evaluateRelay({
+      receiverId: "usdc.testnet",
+      methodName: "ft_transfer_call",
+      args: {
+        receiver_id: "attacker.testnet",
+        amount: "1000000",
+        msg: "deposit:circle_1"
+      },
+      orbitContractId: "orbit.testnet",
+      stablecoinId: "usdc.testnet"
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.reason, /targeting the Ajo contract/);
+  });
+
+  it("prefers EVM USDC origin chains ahead of non-EVM chains when both are present", () => {
+    const pair = pickUsdcPair([
+      { symbol: "USDC", blockchain: "near", assetId: "nep141:usdc.near" },
+      { symbol: "USDC", blockchain: "sol", assetId: "nep141:sol-usdc.omft.near" },
+      { symbol: "USDC", blockchain: "arb", assetId: "nep141:arb-usdc.omft.near" }
+    ]);
+    assert.equal(pair.destination.blockchain, "near");
+    assert.equal(pair.origin.blockchain, "arb");
+  });
 });

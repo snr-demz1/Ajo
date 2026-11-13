@@ -369,6 +369,7 @@ function lockMembership(
 }
 
 function applyFtCollateral(circleId: string, member: string, amount: Uint8Array, token: string): void {
+  assertCondition(!u128IsZero(amount), "Collateral amount must be positive.");
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
   const p = raw.split("|");
@@ -416,9 +417,15 @@ function applyDeposit(caller: string, circleId: string, depositVal: Uint8Array, 
   const raw = storageRead("c:" + circleId, "");
   assertCondition(raw.length > 0, "Circle not found.");
   const p = raw.split("|");
-  assertCondition(circleToken(p) == token, token.length == 0
-    ? "This circle settles in " + circleToken(p) + ". Deposit with ft_transfer_call."
-    : "Attached NEAR is not the contribution. Use ft_transfer_call.");
+  const expectedToken = circleToken(p);
+  assertCondition(
+    expectedToken == token,
+    token.length == 0
+      ? "This circle settles in " + expectedToken + ". Deposit with ft_transfer_call."
+      : (expectedToken.length == 0
+        ? "This circle settles in NEAR. Call deposit instead of ft_transfer_call."
+        : "Token is not the circle stablecoin (" + expectedToken + ").")
+  );
   assertCondition(p[11] == "Active", "Circle is not active.");
   const members = splitCsv(p[6]);
   assertCondition(arrayContains(members, caller), "You are not a member of this circle.");
@@ -570,9 +577,9 @@ export function create_circle(): void {
   const deposit = attachedDepositBytes();
 
   const name = getJsonString(input, "name");
-  const contributionStr = getJsonString(input, "contribution_amount");
+  const rawContributionStr = getJsonString(input, "contribution_amount");
   const durationMs = getJsonNumber(input, "round_duration_ms", 0);
-  const totalMembers = i32(getJsonNumber(input, "total_members", 0));
+  const totalMembers64 = getJsonNumber(input, "total_members", 0);
   const tokenId = getJsonString(input, "token_id");
   const useCredit = getJsonNumber(input, "credit", 0) == 1;
 
@@ -581,14 +588,16 @@ export function create_circle(): void {
     isSafeText(name),
     "Circle name must be 2-64 safe characters (letters, numbers, spaces, -_#.) without pipes, quotes, or backslashes."
   );
-  assertCondition(isSafeDigits(contributionStr), "Contribution amount must be a valid integer string.");
-  assertCondition(totalMembers >= 2 && totalMembers <= 20, "Circle must require between 2 and 20 members.");
+  assertCondition(isSafeDigits(rawContributionStr), "Contribution amount must be a valid integer string.");
+  assertCondition(totalMembers64 >= 2 && totalMembers64 <= 20, "Circle must require between 2 and 20 members.");
+  const totalMembers = i32(totalMembers64);
   assertCondition(durationMs >= 60000, "Round duration must be at least 60000 ms (1 minute).");
   if (tokenId.length > 0) {
     assertCondition(isSafeIdentifier(tokenId), "Invalid token account ID.");
   }
 
-  const contributionBytes = u128FromString(contributionStr);
+  const contributionBytes = u128FromString(rawContributionStr);
+  const contributionStr = u128ToString(contributionBytes);
   if (tokenId.length == 0) {
     const minContributionBytes = u128FromString(MIN_CONTRIBUTION_YOCTO);
     assertCondition(
@@ -647,6 +656,8 @@ export function join_circle(): void {
   assertCondition(status == "Pending", "Circle is not accepting new members.");
 
   const members = splitCsv(p[6]);
+  const totalMembers = i32(I64.parseInt(p[5]));
+  assertCondition(members.length < totalMembers, "Circle is already full.");
   assertCondition(!arrayContains(members, caller), "Already a member of this circle.");
 
   const useCredit = getJsonNumber(input, "credit", 0) == 1;
@@ -701,11 +712,13 @@ export function ft_on_transfer(): void {
   const circleId = parts[1];
   assertCondition(isSafeIdentifier(circleId), "Invalid circle_id format.");
   if (action == "collateral") {
+    assertCondition(parts.length == 2, "collateral msg must be collateral:circle_id.");
     applyFtCollateral(circleId, sender, amount, token);
   } else if (action == "deposit") {
+    assertCondition(parts.length == 2, "deposit msg must be deposit:circle_id.");
     applyDeposit(sender, circleId, amount, token);
   } else if (action == "vouch") {
-    assertCondition(parts.length >= 3, "vouch msg requires vouch:circle_id:member_id.");
+    assertCondition(parts.length == 3, "vouch msg requires vouch:circle_id:member_id.");
     const memberId = parts[2];
     assertCondition(isSafeIdentifier(memberId), "Invalid member_id format.");
     applyVouch(circleId, memberId, sender, amount, token);
@@ -758,17 +771,18 @@ export function report_default(): void {
   const requiredStr = p[2];
   const requiredBytes = u128FromString(requiredStr);
 
-  // Slash reputation (-150 pts)
-  updateProfile(defaulterId, 0, 0, 1, -150, requiredStr);
-
   if (!coverDefault(circleId, defaulterId, requiredBytes)) {
-    // Own collateral plus any voucher lock cannot cover this round.
+    // Own collateral plus any voucher lock cannot cover this round; no round funds seized in this call.
+    updateProfile(defaulterId, 0, 0, 1, -150, "0");
     p[11] = "Terminated";
     storageWrite("c:" + circleId, p.join("|"));
     log("Circle " + circleId + " TERMINATED: defaulter " + defaulterId + " collateral exhausted.");
     valueReturn('"Terminated"');
     return;
   }
+
+  // Slash reputation (-150 pts) and record seized round obligation
+  updateProfile(defaulterId, 0, 0, 1, -150, requiredStr);
 
   const newPotBytes = u128Add(u128FromString(p[12]), requiredBytes);
   p[12] = u128ToString(newPotBytes);
@@ -1220,14 +1234,20 @@ export function get_circle(): void {
 
 export function get_circles(): void {
   const input = getInputString();
-  const fromIndex = i32(getJsonNumber(input, "from_index", 0));
-  let limit = i32(getJsonNumber(input, "limit", 10));
-  if (limit > 50) limit = 50;
+  const fromIndex64 = getJsonNumber(input, "from_index", 0);
+  let limit64 = getJsonNumber(input, "limit", 10);
+  if (limit64 > 50) limit64 = 50;
 
-  const total = i32(I64.parseInt(storageRead("counter", "0")));
-  const start = fromIndex + 1;
-  let end = start + limit - 1;
-  if (end > total) end = total;
+  const total64 = I64.parseInt(storageRead("counter", "0"));
+  if (fromIndex64 < 0 || limit64 <= 0 || fromIndex64 >= total64) {
+    valueReturn("[]");
+    return;
+  }
+
+  const start = i32(fromIndex64 + 1);
+  let end64 = fromIndex64 + limit64;
+  if (end64 > total64) end64 = total64;
+  const end = i32(end64);
 
   let out = "[";
   let first = true;

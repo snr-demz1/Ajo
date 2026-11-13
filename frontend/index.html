@@ -449,7 +449,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="circle-amt-input" class="block text-slate-300 font-semibold mb-1">Contribution / Round (min 1 NEAR)</label>
-            <input id="circle-amt-input" type="number" value="1" min="1" max="1000" oninput="updateCollateralPreview()" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
+            <input id="circle-amt-input" type="number" value="1" min="1" max="1000" step="any" oninput="updateCollateralPreview()" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
             <label for="circle-size-input" class="block text-slate-300 font-semibold mb-1">Total Members (2–20)</label>
@@ -549,8 +549,11 @@
         name: "Lagos Tech Founders Ajo",
         creator: "alice-ajo-26192.testnet",
         cadence: "Daily (24 hours)",
+        tokenId: "",
         contribution: 1,
+        contributionRaw: "1000000000000000000000000",
         collateralPerMember: 1,
+        collateralRaw: "1000000000000000000000000",
         currentRound: 2,
         totalRounds: 2,
         status: "Active",
@@ -560,6 +563,8 @@
         paidRecipients: ["alice-ajo-26192.testnet"],
         pot: 0,
         defaulted: [],
+        creditMembers: [],
+        vouchers: {},
         memberCollateral: {
           "alice-ajo-26192.testnet": 1,
           "bob-ajo-26192.testnet": 1
@@ -570,8 +575,11 @@
         name: "Nairobi Susu Savings",
         creator: "alice-ajo-26192.testnet",
         cadence: "Daily (24 hours)",
+        tokenId: "",
         contribution: 1,
+        contributionRaw: "1000000000000000000000000",
         collateralPerMember: 1,
+        collateralRaw: "1000000000000000000000000",
         currentRound: 1,
         totalRounds: 2,
         status: "Active",
@@ -581,6 +589,8 @@
         paidRecipients: [],
         pot: 1,
         defaulted: [],
+        creditMembers: [],
+        vouchers: {},
         memberCollateral: {
           "alice-ajo-26192.testnet": 1,
           "bob-ajo-26192.testnet": 1
@@ -600,12 +610,45 @@
       return "Bronze Tier";
     }
 
+    function formatAmount(val) {
+      const n = Number(val) || 0;
+      return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(4)));
+    }
+
+    function circleUnit(circle) {
+      return circle && circle.tokenId ? "USDC" : "NEAR";
+    }
+
+    function parseNearDecimalToYocto(amtStr) {
+      const cleaned = String(amtStr).trim();
+      if (window.nearApi && window.nearApi.utils?.format?.parseNearAmount) {
+        const res = window.nearApi.utils.format.parseNearAmount(cleaned);
+        if (res) return res;
+      }
+      const parts = cleaned.split(".");
+      const whole = parts[0] || "0";
+      const frac = (parts[1] || "").padEnd(24, "0").slice(0, 24);
+      return BigInt(whole + frac).toString();
+    }
+
     function updateCollateralPreview() {
       const amt = parseFloat(document.getElementById('circle-amt-input')?.value) || 1;
       const size = parseInt(document.getElementById('circle-size-input')?.value, 10) || 2;
       const col = Math.max(1, size - 1) * amt;
       const el = document.getElementById('collateral-preview-text');
-      if (el) el.textContent = `${col} NEAR / member`;
+      if (el) el.textContent = `${formatAmount(col)} NEAR / member`;
+    }
+
+    function updateCircleStatsUI() {
+      const el = document.getElementById("stat-circles-count");
+      if (!el) return;
+      const activeCount = circlesData.filter(c => c.status === "Active").length;
+      el.textContent = "";
+      el.appendChild(document.createTextNode(`${activeCount} `));
+      const span = document.createElement("span");
+      span.className = "text-sm font-semibold text-emerald-400";
+      span.textContent = circlesData.length !== activeCount ? `Active (${circlesData.length} total)` : "Active";
+      el.appendChild(span);
     }
 
     // Call read-only @view method on NEAR Testnet RPC with multi-endpoint failover
@@ -645,11 +688,11 @@
     }
 
     // Sign and send a real state-changing transaction on NEAR Testnet if active profile has a live keypair
-    async function callNearChangeIfLive(methodName, argsObj, depositNear = 0) {
+    async function callNearChangeIfLive(methodName, argsObj, depositNear = 0, opts = {}) {
       const secretKey = liveKeyPairs[currentProfile.handle];
       if (!secretKey || !window.nearApi) return null;
 
-      const { KeyPair, keyStores, connect, utils } = window.nearApi;
+      const { KeyPair, keyStores, connect } = window.nearApi;
       const keyStore = new keyStores.InMemoryKeyStore();
       await keyStore.setKey("testnet", currentProfile.handle, KeyPair.fromString(secretKey));
 
@@ -659,27 +702,33 @@
         nodeUrl: TESTNET_RPC_URL
       });
       const account = await near.account(currentProfile.handle);
-      const depositYocto = depositNear > 0 ? utils.format.parseNearAmount(String(depositNear)) : "0";
+      const depositYocto = opts.depositYocto != null
+        ? String(opts.depositYocto)
+        : (depositNear > 0 ? parseNearDecimalToYocto(depositNear) : "0");
 
       const outcome = await account.functionCall({
         contractId: TESTNET_CONTRACT_ID,
         methodName,
         args: argsObj,
-        gas: "50000000000000",
+        gas: opts.gas || "50000000000000",
         attachedDeposit: depositYocto
       });
       return outcome?.transaction_outcome?.id || outcome?.transaction?.hash || null;
     }
 
-    function yoctoToNearNumber(yoctoStr) {
-      if (!yoctoStr || yoctoStr === "0") return 0;
-      const s = String(yoctoStr);
-      if (s.length <= 24) {
-        return Number(s) / YOCTO_PER_NEAR;
+    function baseUnitsToNumber(rawStr, decimals = 24) {
+      if (!rawStr || rawStr === "0") return 0;
+      const s = String(rawStr);
+      if (s.length <= decimals) {
+        return Number(s) / (10 ** decimals);
       }
-      const whole = s.slice(0, s.length - 24);
-      const frac = s.slice(s.length - 24, s.length - 22);
+      const whole = s.slice(0, s.length - decimals);
+      const frac = s.slice(s.length - decimals, s.length - decimals + 4);
       return parseFloat(`${whole}.${frac}`);
+    }
+
+    function yoctoToNearNumber(yoctoStr) {
+      return baseUnitsToNumber(yoctoStr, 24);
     }
 
     async function syncFromTestnetRpc() {
@@ -693,17 +742,21 @@
           circlesData = onChainCircles.map(c => {
             const roundStr = String(c.current_round || 1);
             const paidThisRound = (c.round_paid_members && c.round_paid_members[roundStr]) ? c.round_paid_members[roundStr] : [];
+            const decimals = c.token_id ? 6 : 24;
             const colMap = {};
             for (const [k, v] of Object.entries(c.member_collateral || {})) {
-              colMap[k] = yoctoToNearNumber(v);
+              colMap[k] = baseUnitsToNumber(v, decimals);
             }
             return {
               id: c.id,
               name: c.name,
               creator: c.creator || (c.members && c.members[0]) || "alice-ajo-26192.testnet",
               cadence: c.round_duration_ms >= 86400000 ? "Daily (24 hours)" : `${Math.round(c.round_duration_ms / 1000)}s round`,
-              contribution: yoctoToNearNumber(c.contribution_amount),
-              collateralPerMember: yoctoToNearNumber(c.collateral_per_member),
+              tokenId: c.token_id || "",
+              contribution: baseUnitsToNumber(c.contribution_amount, decimals),
+              contributionRaw: String(c.contribution_amount || "0"),
+              collateralPerMember: baseUnitsToNumber(c.collateral_per_member, decimals),
+              collateralRaw: String(c.collateral_per_member || "0"),
               currentRound: c.current_round,
               totalRounds: c.total_members,
               status: c.status,
@@ -711,8 +764,10 @@
               payoutOrder: c.payout_order || [],
               paidThisRound: paidThisRound,
               paidRecipients: c.paid_recipients || [],
-              pot: yoctoToNearNumber(c.total_pot),
+              pot: baseUnitsToNumber(c.total_pot, decimals),
               defaulted: c.defaulted_members || [],
+              creditMembers: c.credit_members || [],
+              vouchers: c.vouchers || {},
               memberCollateral: colMap
             };
           });
@@ -724,11 +779,13 @@
           currentProfile.score = rep.reputation_score;
           currentProfile.onTime = rep.on_time_payments;
           currentProfile.missed = rep.missed_payments;
+          currentProfile.completed = rep.circles_completed || 0;
+          currentProfile.collateralBps = rep.collateral_bps || (rep.reputation_score >= 550 ? 5000 : 10000);
+          currentProfile.slashedTotal = rep.collateral_slashed_total || "0";
         }
 
         dotEl.className = "w-2 h-2 rounded-full bg-emerald-400";
         statusEl.textContent = `Connected to rpc.testnet.near.org • Synced ${circlesData.length} on-chain circles`;
-        document.getElementById("stat-circles-count").textContent = `${circlesData.length} Active`;
         applyProfileToUI();
         renderCircles();
       } catch (err) {
@@ -782,7 +839,7 @@
 
       if (txHash) {
         const txLink = document.createElement('a');
-        txLink.href = `https://testnet.nearblocks.io/txns/${txHash}`;
+        txLink.href = `https://testnet.nearblocks.io/txns/${encodeURIComponent(txHash)}`;
         txLink.target = "_blank";
         txLink.rel = "noopener noreferrer";
         txLink.className = "mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 hover:underline";
@@ -913,6 +970,9 @@
             currentProfile.score = rep.reputation_score;
             currentProfile.onTime = rep.on_time_payments;
             currentProfile.missed = rep.missed_payments;
+            currentProfile.completed = rep.circles_completed || 0;
+            currentProfile.collateralBps = rep.collateral_bps || (rep.reputation_score >= 550 ? 5000 : 10000);
+            currentProfile.slashedTotal = rep.collateral_slashed_total || "0";
           }
         } catch (_) {}
         applyProfileToUI();
@@ -950,8 +1010,9 @@
 
     async function completeSignUp() {
       const name = document.getElementById('signup-fullname').value.trim() || "Builder";
-      let rawHandle = document.getElementById('signup-handle').value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '') || name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (rawHandle.endsWith('.testnet')) rawHandle = rawHandle.slice(0, -8);
+      let rawInput = document.getElementById('signup-handle').value.trim().toLowerCase();
+      if (rawInput.endsWith('.testnet')) rawInput = rawInput.slice(0, -8);
+      let rawHandle = rawInput.replace(/[^a-z0-9-_]/g, '') || name.toLowerCase().replace(/[^a-z0-9]/g, '') || "ajo-user";
       const wantLive = document.getElementById('signup-live-faucet').checked;
       const btn = document.getElementById('signup-submit-btn');
 
@@ -1038,8 +1099,15 @@
     function renderCircles() {
       const grid = document.getElementById('circles-grid');
       grid.textContent = '';
+      updateCircleStatsUI();
 
       circlesData.forEach(circle => {
+        const unit = circleUnit(circle);
+        const isActive = circle.status === "Active";
+        const isPending = circle.status === "Pending";
+        const isCompleted = circle.status === "Completed";
+        const isTerminated = circle.status === "Terminated";
+
         const card = document.createElement('div');
         card.className = "glass-surface rounded-3xl p-6 space-y-6 relative border border-white/10 hover:border-emerald-500/30 transition";
 
@@ -1050,7 +1118,7 @@
         const leftHead = document.createElement('div');
         const badge = document.createElement('span');
         badge.className = "text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10";
-        badge.textContent = circle.status === "Active"
+        badge.textContent = isActive
           ? `Round ${circle.currentRound} of ${circle.totalRounds} • ${circle.status}`
           : `${circle.status} (Round ${circle.currentRound}/${circle.totalRounds})`;
 
@@ -1060,7 +1128,8 @@
 
         const sub = document.createElement('p');
         sub.className = "text-xs text-slate-400";
-        sub.textContent = `${circle.cadence} • ${circle.totalRounds} members • Collateral: ${circle.collateralPerMember || (circle.totalRounds - 1) * circle.contribution} NEAR`;
+        const displayCol = circle.collateralPerMember ?? ((circle.totalRounds - 1) * circle.contribution);
+        sub.textContent = `${circle.cadence} • ${circle.totalRounds} members • Collateral: ${formatAmount(displayCol)} ${unit}`;
 
         leftHead.appendChild(badge);
         leftHead.appendChild(title);
@@ -1073,7 +1142,7 @@
         potLabel.textContent = "Current Pot in Escrow";
         const potVal = document.createElement('div');
         potVal.className = "text-xl font-black text-white mono";
-        potVal.textContent = `${circle.pot} / ${circle.contribution * circle.totalRounds} NEAR`;
+        potVal.textContent = `${formatAmount(circle.pot)} / ${formatAmount(circle.contribution * circle.totalRounds)} ${unit}`;
         const membersPaid = document.createElement('span');
         membersPaid.className = "text-[10px] text-emerald-400 font-semibold";
         membersPaid.textContent = `${circle.paidThisRound.length} of ${circle.totalRounds} Paid`;
@@ -1092,12 +1161,16 @@
         const turnTitle = document.createElement('div');
         turnTitle.className = "flex justify-between text-xs text-slate-300 font-medium";
 
-        const scheduledRecipient = getNextHonestRecipient(circle);
+        const scheduledRecipient = (isActive || isPending) ? getNextHonestRecipient(circle) : null;
         const turnLeftSpan = document.createElement('span');
-        turnLeftSpan.textContent = "Turn Order (Reputation-Sorted, Skips Defaulters)";
+        turnLeftSpan.textContent = isCompleted
+          ? "Final Turn Order (Completed)"
+          : (isTerminated ? "Turn Order (Terminated)" : "Turn Order (Reputation-Sorted, Skips Defaulters)");
         const turnRightSpan = document.createElement('span');
-        turnRightSpan.className = "text-emerald-400 font-bold mono";
-        turnRightSpan.textContent = `Next Honest Recipient: ${scheduledRecipient}`;
+        turnRightSpan.className = isTerminated ? "text-red-400 font-bold mono" : "text-emerald-400 font-bold mono";
+        turnRightSpan.textContent = isCompleted
+          ? "All Rounds Settled ✓"
+          : (isTerminated ? "Circle Terminated" : `Next Honest Recipient: ${scheduledRecipient}`);
         turnTitle.appendChild(turnLeftSpan);
         turnTitle.appendChild(turnRightSpan);
         turnBox.appendChild(turnTitle);
@@ -1109,7 +1182,7 @@
         circle.members.forEach((m, idx) => {
           const pill = document.createElement('div');
           const isPaid = circle.paidThisRound.includes(m);
-          const isRecipient = (m === scheduledRecipient);
+          const isRecipient = scheduledRecipient !== null && (m === scheduledRecipient);
           const isDefaulter = circle.defaulted.includes(m);
 
           pill.className = `rounded-xl p-2.5 text-center border ${
@@ -1136,7 +1209,7 @@
 
           const statusTag = document.createElement('div');
           statusTag.className = "text-[9px] " + (isDefaulter ? "text-red-400 font-bold" : (isPaid ? "text-emerald-400" : "text-slate-500"));
-          statusTag.textContent = isDefaulter ? "Defaulted (Skipped)" : (isPaid ? "Paid" : "Pending");
+          statusTag.textContent = isDefaulter ? "Defaulted (Skipped)" : (isPaid ? "Paid" : (isCompleted ? "Settled" : "Pending"));
 
           pill.appendChild(dot);
           pill.appendChild(nameTag);
@@ -1150,18 +1223,16 @@
         const actions = document.createElement('div');
         actions.className = "pt-3 border-t border-white/5 flex flex-wrap gap-2";
 
-        const isActive = circle.status === "Active";
-        const isPending = circle.status === "Pending";
         const isMember = circle.members.includes(currentProfile.handle);
         const isDefaulter = circle.defaulted.includes(currentProfile.handle);
         const hasDeposited = circle.paidThisRound.includes(currentProfile.handle);
         const modeSuffix = currentProfile.isLiveSigner ? "(On-Chain Tx)" : "(Simulated)";
-        const colReq = circle.collateralPerMember || ((circle.totalRounds - 1) * circle.contribution);
+        const colReq = displayCol;
 
-        if (isPending && !isMember) {
+        if (isPending && !isMember && circle.members.length < circle.totalRounds) {
           const joinBtn = document.createElement('button');
           joinBtn.className = "flex-1 py-2.5 rounded-xl font-extrabold text-xs transition tactile-btn flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#00EC97] to-[#00B4D8] text-black shadow-lg shadow-emerald-500/20";
-          joinBtn.textContent = `🤝 Join Circle (Stake ${colReq} NEAR) ${modeSuffix}`;
+          joinBtn.textContent = `🤝 Join Circle (Stake ${formatAmount(colReq)} ${unit}) ${modeSuffix}`;
           joinBtn.onclick = () => executeCircleJoin(circle.id);
           actions.appendChild(joinBtn);
         } else {
@@ -1174,23 +1245,34 @@
           depBtn.disabled = !isActive || hasDeposited || !isMember || isDefaulter;
           depBtn.textContent = isPending
             ? `⏳ Waiting for Members (${circle.members.length}/${circle.totalRounds})`
-            : (hasDeposited
-                ? "✓ You Deposited"
-                : (!isMember ? "Not in Circle" : `💳 Deposit ${circle.contribution} NEAR ${modeSuffix}`));
+            : isCompleted
+              ? "✓ Circle Completed"
+              : isTerminated
+                ? "✕ Circle Terminated"
+                : isDefaulter
+                  ? "⛔ Defaulted (Banned)"
+                  : (hasDeposited
+                      ? "✓ You Deposited"
+                      : (!isMember ? "Not in Circle" : `💳 Deposit ${formatAmount(circle.contribution)} ${unit} ${modeSuffix}`));
           depBtn.onclick = () => executeCircleDeposit(circle.id);
           actions.appendChild(depBtn);
         }
 
         const disburseBtn = document.createElement('button');
         const canDisburse = isActive && circle.paidThisRound.length >= circle.totalRounds;
+        disburseBtn.disabled = !canDisburse;
         disburseBtn.className = `flex-1 py-2.5 rounded-xl font-extrabold text-xs transition tactile-btn flex items-center justify-center gap-1.5 ${
           canDisburse
             ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black shadow-lg shadow-emerald-500/20'
-            : 'bg-white/5 text-slate-500 border border-white/5'
+            : 'bg-white/5 text-slate-500 border border-white/5 cursor-not-allowed'
         }`;
         disburseBtn.textContent = canDisburse
           ? `🎉 Claim Pot -> ${scheduledRecipient.split('.')[0]} ${modeSuffix}`
-          : `Pot Incomplete (${circle.paidThisRound.length}/${circle.totalRounds})`;
+          : isCompleted
+            ? "✓ All Rounds Settled"
+            : isTerminated
+              ? "✕ Circle Terminated"
+              : `Pot Incomplete (${circle.paidThisRound.length}/${circle.totalRounds})`;
         disburseBtn.onclick = () => executeCircleClaim(circle.id);
         actions.appendChild(disburseBtn);
 
@@ -1204,7 +1286,7 @@
         }
 
         const hasRemainingCollateral = Object.values(circle.memberCollateral || {}).some(v => v > 0);
-        const canTerminateOrExit = (isPending && isMember) || isActive || (circle.status === "Terminated" && (circle.pot > 0 || hasRemainingCollateral));
+        const canTerminateOrExit = (isPending && isMember) || isActive || (isTerminated && (circle.pot > 0 || hasRemainingCollateral));
         if (canTerminateOrExit) {
           const termBtn = document.createElement('button');
           termBtn.className = "py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 text-[11px] font-semibold text-amber-300 transition";
@@ -1225,30 +1307,32 @@
 
     async function openPassportModal() {
       const box = document.getElementById('passport-json-box');
+      const requestedHandle = currentProfile.handle;
       const tierClean = calculateTier(currentProfile.score).replace(' Tier', '');
       const payload = {
         standard: "orbit-sbt-v1 (Account-Bound Non-Transferable)",
         contract_id: TESTNET_CONTRACT_ID,
-        storage_key: `rep:${currentProfile.handle}`,
-        account_id: currentProfile.handle,
+        storage_key: `rep:${requestedHandle}`,
+        account_id: requestedHandle,
         circles_completed: currentProfile.completed || 0,
         on_time_payments: currentProfile.onTime || 0,
         missed_payments: currentProfile.missed || 0,
         reputation_score: currentProfile.score,
         tier: tierClean,
-        collateral_slashed_total: "0",
+        collateral_bps: currentProfile.collateralBps || (currentProfile.score >= 550 ? 5000 : 10000),
+        collateral_slashed_total: currentProfile.slashedTotal || "0",
         transferable: false
       };
       box.textContent = JSON.stringify(payload, null, 2);
       openModal('passport-modal');
 
       try {
-        const liveRep = await callNearView("get_reputation_profile", { account_id: currentProfile.handle });
-        if (liveRep && liveRep.account_id) {
+        const liveRep = await callNearView("get_reputation_profile", { account_id: requestedHandle });
+        if (liveRep && liveRep.account_id && currentProfile.handle === requestedHandle) {
           box.textContent = JSON.stringify({
             standard: "orbit-sbt-v1 (Account-Bound Non-Transferable)",
             contract_id: TESTNET_CONTRACT_ID,
-            storage_key: `rep:${currentProfile.handle}`,
+            storage_key: `rep:${requestedHandle}`,
             ...liveRep,
             transferable: false
           }, null, 2);
@@ -1279,7 +1363,7 @@
       if (enabled) runKeeperPollCycleUI(true);
     }
 
-    async function runKeeperPollCycleUI(silentIfIdle = false) {
+    async function runKeeperPollCycleUI(silentIfIdle = false, forceLocal = false) {
       appendKeeperLog(`Scanning ${circlesData.length} circle(s) via get_circles on ${TESTNET_CONTRACT_ID}...`);
       let settledCount = 0;
 
@@ -1291,8 +1375,8 @@
         }
         if (paidCount >= circle.totalRounds) {
           const recipient = getNextHonestRecipient(circle);
-          appendKeeperLog(`⚡ Condition Met on [${circle.id}]: 100% funded (${circle.pot} NEAR)! Triggering permissionless claim_payout -> ${recipient}...`, true);
-          await executeCircleClaim(circle.id, true);
+          appendKeeperLog(`⚡ Condition Met on [${circle.id}]: 100% funded (${formatAmount(circle.pot)} ${circleUnit(circle)})! Triggering permissionless claim_payout -> ${recipient}...`, true);
+          await executeCircleClaim(circle.id, true, forceLocal);
           settledCount++;
         }
       }
@@ -1319,12 +1403,12 @@
             prof.score = Math.min(1000, prof.score + 15);
             prof.onTime = (prof.onTime || 0) + 1;
           }
-          appendKeeperLog(`Detected verified round deposit (+${target.contribution} NEAR) from ${m} (+15 Rep).`);
+          appendKeeperLog(`Detected verified round deposit (+${formatAmount(target.contribution)} ${circleUnit(target)}) from ${m} (+15 Rep).`);
         }
       }
       applyProfileToUI();
       renderCircles();
-      await runKeeperPollCycleUI(false);
+      await runKeeperPollCycleUI(false, true);
     }
 
     async function executeCircleJoin(circleId) {
@@ -1334,14 +1418,23 @@
         showToast("You are already a member of this circle.", "error");
         return;
       }
+      if (circle.members.length >= circle.totalRounds) {
+        showToast("Circle is already full.", "error");
+        return;
+      }
 
       const colReq = circle.collateralPerMember || ((circle.totalRounds - 1) * circle.contribution);
       let txHash = null;
 
       if (currentProfile.isLiveSigner) {
+        if (circle.tokenId) {
+          showToast(`Stablecoin circle (${circle.tokenId}): join via join_circle then ft_transfer_call.`, "error");
+          return;
+        }
         try {
-          showToast(`Signing on-chain join_circle transaction (${colReq} NEAR collateral)...`);
-          txHash = await callNearChangeIfLive("join_circle", { circle_id: circleId }, colReq);
+          showToast(`Signing on-chain join_circle transaction (${formatAmount(colReq)} NEAR collateral)...`);
+          const depositYocto = circle.collateralRaw || parseNearDecimalToYocto(colReq);
+          txHash = await callNearChangeIfLive("join_circle", { circle_id: circleId }, colReq, { depositYocto });
         } catch (err) {
           showToast(`On-chain tx error: ${err.message}`, "error");
           return;
@@ -1365,11 +1458,12 @@
       }
 
       renderCircles();
+      if (txHash) await syncFromTestnetRpc();
 
       addFeedEntry(
         `Joined Circle: ${circle.name}`,
-        `${currentProfile.handle} staked ${colReq} NEAR (N-1)x collateral (${circle.members.length}/${circle.totalRounds} members)`,
-        `-${colReq}.00 NEAR (Collateral)`,
+        `${currentProfile.handle} staked ${formatAmount(colReq)} ${circleUnit(circle)} (N-1)x collateral (${circle.members.length}/${circle.totalRounds} members)`,
+        `-${formatAmount(colReq)} ${circleUnit(circle)} (Collateral)`,
         circle.status === "Active" ? "Circle Activated!" : "Joined Pending",
         true,
         txHash
@@ -1393,9 +1487,14 @@
       if (!circle.paidThisRound.includes(currentProfile.handle)) {
         let txHash = null;
         if (currentProfile.isLiveSigner) {
+          if (circle.tokenId) {
+            showToast(`Stablecoin circle (${circle.tokenId}): deposit via ft_transfer_call.`, "error");
+            return;
+          }
           try {
             showToast("Signing on-chain deposit transaction on NEAR Testnet...");
-            txHash = await callNearChangeIfLive("deposit", { circle_id: circleId }, circle.contribution);
+            const depositYocto = circle.contributionRaw || parseNearDecimalToYocto(circle.contribution);
+            txHash = await callNearChangeIfLive("deposit", { circle_id: circleId }, circle.contribution, { depositYocto });
           } catch (err) {
             showToast(`On-chain tx error: ${err.message}`, "error");
             return;
@@ -1409,36 +1508,39 @@
         currentProfile.onTime = (currentProfile.onTime || 0) + 1;
         applyProfileToUI();
         renderCircles();
+        if (txHash) await syncFromTestnetRpc();
 
         addFeedEntry(
           `Deposit to ${circle.name}`,
-          `${currentProfile.handle} contributed ${circle.contribution} NEAR for Round ${circle.currentRound}`,
-          `-${circle.contribution}.00 NEAR`,
+          `${currentProfile.handle} contributed ${formatAmount(circle.contribution)} ${circleUnit(circle)} for Round ${circle.currentRound}`,
+          `-${formatAmount(circle.contribution)} ${circleUnit(circle)}`,
           "+15 Credit Score",
           true,
           txHash
         );
 
+        const latestAfter = circlesData.find(c => c.id === circleId) || circle;
         showToast(
           txHash
             ? `⚡ On-chain deposit confirmed on NEAR Testnet! Tx: ${txHash.slice(0, 10)}...`
-            : `Simulated locally (use CLI / keeper or provision Live Signer for on-chain signing): Pot now holds ${circle.pot} NEAR.`
+            : `Simulated locally (use CLI / keeper or provision Live Signer for on-chain signing): Pot now holds ${formatAmount(latestAfter.pot)} ${circleUnit(latestAfter)}.`
         );
 
         // If Keeper Auto-Pilot is ON and all round deposits are now in escrow, auto-settle!
         const autoPilot = document.getElementById('keeper-autopilot-toggle')?.checked;
-        if (autoPilot && circle.paidThisRound.length >= circle.totalRounds) {
-          appendKeeperLog(`Detected ${circle.paidThisRound.length}/${circle.totalRounds} deposits in [${circle.id}]. Auto-executing permissionless claim_payout in 600ms...`, true);
+        if (autoPilot && latestAfter.paidThisRound.length >= latestAfter.totalRounds) {
+          appendKeeperLog(`Detected ${latestAfter.paidThisRound.length}/${latestAfter.totalRounds} deposits in [${latestAfter.id}]. Auto-executing permissionless claim_payout in 600ms...`, true);
           setTimeout(() => {
-            if (circle.status === "Active" && circle.paidThisRound.length >= circle.totalRounds) {
-              executeCircleClaim(circle.id, true);
+            const fresh = circlesData.find(c => c.id === circleId);
+            if (fresh && fresh.status === "Active" && fresh.paidThisRound.length >= fresh.totalRounds) {
+              executeCircleClaim(fresh.id, true);
             }
           }, 600);
         }
       }
     }
 
-    async function executeCircleClaim(circleId, triggeredByKeeper = false) {
+    async function executeCircleClaim(circleId, triggeredByKeeper = false, forceLocal = false) {
       const circle = circlesData.find(c => c.id === circleId);
       if (!circle || circle.status !== "Active") return;
 
@@ -1448,10 +1550,10 @@
       }
 
       let txHash = null;
-      if (currentProfile.isLiveSigner) {
+      if (currentProfile.isLiveSigner && !forceLocal) {
         try {
           showToast("Signing on-chain claim_payout transaction on NEAR Testnet...");
-          txHash = await callNearChangeIfLive("claim_payout", { circle_id: circleId }, 0);
+          txHash = await callNearChangeIfLive("claim_payout", { circle_id: circleId }, 0, { gas: "80000000000000" });
         } catch (err) {
           showToast(`On-chain tx error: ${err.message}`, "error");
           return;
@@ -1466,8 +1568,8 @@
 
       addFeedEntry(
         `${triggeredByKeeper ? "🤖 Keeper Auto-Disbursed" : "Round"} ${settledRound} Pot (${circle.name})`,
-        `${payoutAmount} NEAR released to honest recipient ${recipient} (defaulters skipped)`,
-        `+${payoutAmount}.00 NEAR`,
+        `${formatAmount(payoutAmount)} ${circleUnit(circle)} released to honest recipient ${recipient} (defaulters skipped)`,
+        `+${formatAmount(payoutAmount)} ${circleUnit(circle)}`,
         "Round Settled",
         true,
         txHash
@@ -1491,25 +1593,26 @@
           }
         });
         applyProfileToUI();
-        appendKeeperLog(`Circle "${circle.name}" [${circle.id}] COMPLETED! Disbursed ${payoutAmount} NEAR to ${recipient}, refunded all honest collaterals, and awarded +50 Rep completion bonus.`, true);
+        appendKeeperLog(`Circle "${circle.name}" [${circle.id}] COMPLETED! Disbursed ${formatAmount(payoutAmount)} ${circleUnit(circle)} to ${recipient}, refunded all honest collaterals, and awarded +50 Rep completion bonus.`, true);
         showToast(
           txHash
             ? `⚡ On-chain Circle Completed! Tx: ${txHash.slice(0, 10)}...`
-            : `Circle Completed! Disbursed ${payoutAmount} NEAR to ${recipient} & refunded honest collaterals (+50 Rep).`
+            : `Circle Completed! Disbursed ${formatAmount(payoutAmount)} ${circleUnit(circle)} to ${recipient} & refunded honest collaterals (+50 Rep).`
         );
       } else {
         circle.currentRound += 1;
         circle.paidThisRound = [];
         circle.pot = 0;
-        appendKeeperLog(`Disbursed Round ${settledRound} pot (${payoutAmount} NEAR) to ${recipient}. Circle [${circle.id}] advanced to Round ${circle.currentRound}.`, true);
+        appendKeeperLog(`Disbursed Round ${settledRound} pot (${formatAmount(payoutAmount)} ${circleUnit(circle)}) to ${recipient}. Circle [${circle.id}] advanced to Round ${circle.currentRound}.`, true);
         showToast(
           txHash
             ? `⚡ On-chain payout disbursed to ${recipient}! Tx: ${txHash.slice(0, 10)}...`
-            : `Disbursed ${payoutAmount} NEAR to ${recipient}! Advanced to Round ${circle.currentRound}.`
+            : `Disbursed ${formatAmount(payoutAmount)} ${circleUnit(circle)} to ${recipient}! Advanced to Round ${circle.currentRound}.`
         );
       }
 
       renderCircles();
+      if (txHash) await syncFromTestnetRpc();
     }
 
     async function executeDefaulterSimulation(circleId) {
@@ -1551,6 +1654,7 @@
         circle.status = "Terminated";
         applyProfileToUI();
         renderCircles();
+        if (txHash) await syncFromTestnetRpc();
         appendKeeperLog(`Collateral exhausted for defaulter ${unpaid} in [${circle.id}] -> Circle TERMINATED. Honest members can now call withdraw_on_termination.`, true);
         showToast(
           txHash
@@ -1567,13 +1671,14 @@
 
       applyProfileToUI();
       renderCircles();
+      if (txHash) await syncFromTestnetRpc();
 
-      appendKeeperLog(`report_default(${circle.id}, ${unpaid}): Seized ${circle.contribution} NEAR collateral to cover Round ${circle.currentRound} pot; slashed -150 Rep.`, true);
+      appendKeeperLog(`report_default(${circle.id}, ${unpaid}): Seized ${formatAmount(circle.contribution)} ${circleUnit(circle)} collateral to cover Round ${circle.currentRound} pot; slashed -150 Rep.`, true);
 
       addFeedEntry(
         `Default Resolved: ${unpaid}`,
-        `Seized ${circle.contribution} NEAR from (N-1)x collateral (${circle.memberCollateral[unpaid]} NEAR remaining). Defaulter skipped for future payouts.`,
-        `+${circle.contribution}.00 NEAR (Collateral)`,
+        `Seized ${formatAmount(circle.contribution)} ${circleUnit(circle)} from (N-1)x collateral (${formatAmount(circle.memberCollateral[unpaid])} ${circleUnit(circle)} remaining). Defaulter skipped for future payouts.`,
+        `+${formatAmount(circle.contribution)} ${circleUnit(circle)} (Collateral)`,
         "-150 Score Slashed",
         false,
         txHash
@@ -1582,16 +1687,18 @@
       showToast(
         txHash
           ? `⚡ On-chain report_default confirmed! Tx: ${txHash.slice(0, 10)}...`
-          : `Simulated locally: Seized ${circle.contribution} NEAR collateral from ${unpaid}; defaulter banned from future payouts.`
+          : `Simulated locally: Seized ${formatAmount(circle.contribution)} ${circleUnit(circle)} collateral from ${unpaid}; defaulter banned from future payouts.`
       );
 
       // If Keeper Auto-Pilot is ON and collateral seizure completed the round pot, auto-settle!
       const autoPilot = document.getElementById('keeper-autopilot-toggle')?.checked;
-      if (autoPilot && circle.paidThisRound.length >= circle.totalRounds) {
-        appendKeeperLog(`Collateral seizure completed pot (${circle.paidThisRound.length}/${circle.totalRounds}) in [${circle.id}]. Auto-executing permissionless claim_payout in 600ms...`, true);
+      const latestAfter = circlesData.find(c => c.id === circleId) || circle;
+      if (autoPilot && latestAfter.status === "Active" && latestAfter.paidThisRound.length >= latestAfter.totalRounds) {
+        appendKeeperLog(`Collateral seizure completed pot (${latestAfter.paidThisRound.length}/${latestAfter.totalRounds}) in [${latestAfter.id}]. Auto-executing permissionless claim_payout in 600ms...`, true);
         setTimeout(() => {
-          if (circle.status === "Active" && circle.paidThisRound.length >= circle.totalRounds) {
-            executeCircleClaim(circle.id, true);
+          const fresh = circlesData.find(c => c.id === circleId);
+          if (fresh && fresh.status === "Active" && fresh.paidThisRound.length >= fresh.totalRounds) {
+            executeCircleClaim(fresh.id, true);
           }
         }, 600);
       }
@@ -1628,10 +1735,11 @@
         circle.payoutOrder = circle.payoutOrder.filter(m => m !== currentProfile.handle);
         if (circle.memberCollateral) delete circle.memberCollateral[currentProfile.handle];
         renderCircles();
+        if (txHash) await syncFromTestnetRpc();
         addFeedEntry(
           `leave_pending_circle(${circle.id}) Executed`,
-          `${currentProfile.handle} left pending circle; 100% of collateral (${colAmt} NEAR) refunded.`,
-          `+${colAmt}.00 NEAR (Collateral Refund)`,
+          `${currentProfile.handle} left pending circle; 100% of collateral (${formatAmount(colAmt)} ${circleUnit(circle)}) refunded.`,
+          `+${formatAmount(colAmt)} ${circleUnit(circle)} (Collateral Refund)`,
           "Collateral Refunded",
           true,
           txHash
@@ -1656,11 +1764,12 @@
       circle.memberCollateral = {};
 
       renderCircles();
+      if (txHash) await syncFromTestnetRpc();
 
       addFeedEntry(
         isPending ? `cancel_pending_circle(${circle.id}) Executed` : `withdraw_on_termination(${circle.id}) Executed`,
-        `Refunded 100% of staked collateral/deposits to ${honestMembers.length} honest member(s) (0 NEAR locked).`,
-        `+${refundPerHonest}.00 NEAR / member`,
+        `Refunded 100% of staked collateral/deposits to ${honestMembers.length} honest member(s) (0 ${circleUnit(circle)} locked).`,
+        `+${formatAmount(refundPerHonest)} ${circleUnit(circle)} / member`,
         "Escrow Refunded",
         true,
         txHash
@@ -1675,7 +1784,8 @@
 
     async function submitNewCircle() {
       const title = document.getElementById('circle-title-input').value.trim();
-      const amt = parseFloat(document.getElementById('circle-amt-input').value) || 0;
+      const rawAmtStr = document.getElementById('circle-amt-input').value.trim();
+      const amt = parseFloat(rawAmtStr) || 0;
       const size = parseInt(document.getElementById('circle-size-input').value, 10) || 2;
       const cadence = document.getElementById('circle-cadence-input').value;
       const startPending = document.getElementById('circle-pending-mode')?.checked || false;
@@ -1698,13 +1808,14 @@
       else if (cadence.includes("7 days")) durationMs = 604800000;
       else if (cadence.includes("30 days")) durationMs = 2592000000;
 
-      const requiredCollateral = (size - 1) * amt;
+      const contributionYocto = parseNearDecimalToYocto(rawAmtStr);
+      const collateralYocto = (BigInt(contributionYocto) * BigInt(size - 1)).toString();
+      const requiredCollateral = yoctoToNearNumber(collateralYocto);
       let txHash = null;
 
       if (currentProfile.isLiveSigner && window.nearApi) {
         try {
-          showToast(`Signing on-chain create_circle transaction (${requiredCollateral} NEAR collateral)...`);
-          const contributionYocto = window.nearApi.utils.format.parseNearAmount(String(amt));
+          showToast(`Signing on-chain create_circle transaction (${formatAmount(requiredCollateral)} NEAR collateral)...`);
           txHash = await callNearChangeIfLive(
             "create_circle",
             {
@@ -1713,7 +1824,8 @@
               round_duration_ms: durationMs,
               total_members: size
             },
-            requiredCollateral
+            requiredCollateral,
+            { depositYocto: collateralYocto }
           );
         } catch (err) {
           showToast(`On-chain tx error: ${err.message}`, "error");
@@ -1722,7 +1834,11 @@
       }
 
       const isPendingInit = Boolean(txHash || startPending);
-      const newId = `circle_${circlesData.length + 1}`;
+      const maxNum = circlesData.reduce((mx, c) => {
+        const m = /^circle_(\d+)$/.exec(String(c.id || ""));
+        return m ? Math.max(mx, parseInt(m[1], 10)) : mx;
+      }, 0);
+      const newId = `circle_${maxNum + 1}`;
       const pool = [currentProfile.handle, "alice-ajo-26192.testnet", "bob-ajo-26192.testnet", "charlie.testnet"];
       const uniqueMembers = isPendingInit ? [currentProfile.handle] : [...new Set(pool)].slice(0, size);
       while (!isPendingInit && uniqueMembers.length < size) {
@@ -1743,8 +1859,11 @@
         name: title,
         creator: currentProfile.handle,
         cadence: cadence,
+        tokenId: "",
         contribution: amt,
+        contributionRaw: contributionYocto,
         collateralPerMember: requiredCollateral,
+        collateralRaw: collateralYocto,
         currentRound: isPendingInit ? 0 : 1,
         totalRounds: size,
         status: isPendingInit ? "Pending" : "Active",
@@ -1754,19 +1873,22 @@
         paidRecipients: [],
         pot: 0,
         defaulted: [],
+        creditMembers: [],
+        vouchers: {},
         memberCollateral: colMap
       };
 
       circlesData.push(newCircle);
       renderCircles();
       closeModal('create-modal');
+      if (txHash) await syncFromTestnetRpc();
 
-      appendKeeperLog(`New circle "${title}" [${newId}] registered (${newCircle.status}, ${uniqueMembers.length}/${size} members, ${requiredCollateral} NEAR collateral/member).`);
+      appendKeeperLog(`New circle "${title}" [${newId}] registered (${newCircle.status}, ${uniqueMembers.length}/${size} members, ${formatAmount(requiredCollateral)} NEAR collateral/member).`);
 
       addFeedEntry(
         `New Circle Created: ${title}`,
-        `${size} members • ${amt} NEAR/round • Required (N-1)x collateral: ${requiredCollateral} NEAR staked`,
-        `-${requiredCollateral}.00 NEAR (Collateral)`,
+        `${size} members • ${formatAmount(amt)} NEAR/round • Required (N-1)x collateral: ${formatAmount(requiredCollateral)} NEAR staked`,
+        `-${formatAmount(requiredCollateral)} NEAR (Collateral)`,
         txHash ? "Confirmed On-Chain" : "Simulated Locally",
         true,
         txHash

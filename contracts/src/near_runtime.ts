@@ -292,10 +292,17 @@ export function u128IsZero(a: Uint8Array): bool {
 
 function findJsonKeyValueStart(json: string, key: string): i32 {
   let i = 0;
+  let depth: i32 = 0;
   const n = json.length;
   while (i < n) {
     const c = json.charCodeAt(i);
-    if (c == 34) {
+    if (c == 123 || c == 91) {
+      depth++;
+      i++;
+    } else if (c == 125 || c == 93) {
+      if (depth > 0) depth--;
+      i++;
+    } else if (c == 34) {
       // Parse string token
       let strVal = "";
       i++;
@@ -308,6 +315,8 @@ function findJsonKeyValueStart(json: string, key: string): i32 {
             i += 2;
             continue;
           }
+          i++;
+          break;
         }
         if (sc == 34) {
           i++;
@@ -325,10 +334,10 @@ function findJsonKeyValueStart(json: string, key: string): i32 {
           break;
         }
       }
-      // A JSON key is always immediately followed by ':'
+      // Only top-level object keys (depth == 1) immediately followed by ':' match
       if (i < n && json.charCodeAt(i) == 58) {
         i++; // advance past ':'
-        if (strVal == key) {
+        if (depth == 1 && strVal == key) {
           return i;
         }
       }
@@ -342,10 +351,18 @@ function findJsonKeyValueStart(json: string, key: string): i32 {
 export function getJsonString(json: string, key: string): string {
   const valStart = findJsonKeyValueStart(json, key);
   if (valStart == -1) return "";
-  const firstQuote = json.indexOf('"', valStart);
-  if (firstQuote == -1) return "";
+  let i = valStart;
+  while (i < json.length) {
+    const wc = json.charCodeAt(i);
+    if (wc == 32 || wc == 9 || wc == 10 || wc == 13) {
+      i++;
+    } else {
+      break;
+    }
+  }
+  if (i >= json.length || json.charCodeAt(i) != 34) return "";
   let out = "";
-  let i = firstQuote + 1;
+  i++;
   while (i < json.length) {
     const c = json.charCodeAt(i);
     if (c == 92) {
@@ -355,6 +372,8 @@ export function getJsonString(json: string, key: string): string {
         i += 2;
         continue;
       }
+      i++;
+      break;
     }
     if (c == 34) {
       return out;
@@ -362,7 +381,7 @@ export function getJsonString(json: string, key: string): string {
     out += String.fromCharCode(c);
     i++;
   }
-  return out;
+  return "";
 }
 
 export function getJsonNumber(json: string, key: string, defaultVal: i64 = 0): i64 {

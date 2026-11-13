@@ -6,10 +6,13 @@ export function evaluateRelay({ receiverId, methodName, args, orbitContractId, s
   }
   if (methodName === "ft_transfer_call" && receiverId === stablecoinId) {
     const msg = args && typeof args.msg === "string" ? args.msg : "";
-    if (msg.startsWith("deposit:")) {
-      return { ok: true, reason: "stablecoin round deposit" };
+    if (!msg.startsWith("deposit:")) {
+      return { ok: false, reason: "relayer only sponsors deposit messages on the stablecoin" };
     }
-    return { ok: false, reason: "relayer only sponsors deposit messages on the stablecoin" };
+    if (!args || args.receiver_id !== orbitContractId) {
+      return { ok: false, reason: "relayer only sponsors ft_transfer_call targeting the Ajo contract" };
+    }
+    return { ok: true, reason: "stablecoin round deposit" };
   }
   return { ok: false, reason: `relayer refuses ${methodName || "unknown method"}` };
 }

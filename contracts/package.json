@@ -5,7 +5,7 @@
   "main": "build/orbit_contract.wasm",
   "scripts": {
     "build": "asc src/index.ts -o build/orbit_contract.wasm -O3 --runtime stub --use abort=src/near_runtime/customAbort --disable bulk-memory --disable sign-extension --disable nontrapping-f2i",
-    "test": "node --test test/orbit_test.mjs"
+    "test": "node --test test/orbit_test.mjs test/win_path.test.mjs"
   },
   "dependencies": {
     "assemblyscript": "^0.28.20"

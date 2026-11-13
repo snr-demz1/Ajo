@@ -807,4 +807,160 @@ describe("Ajo: Compiled WASM Smart Contract & Security Invariants", () => {
     assert.equal(payout.args.includes('"amount":"2000000"'), true);
   });
 
+  it("24. [Capacity] Pending circle enforces member cap even before FT collateral locks", () => {
+    const contract = new OrbitContractHarness();
+    contract.setCaller("alice.near", 0n);
+    const circle_id = contract.createCircle({
+      name: "USDC Cap",
+      contribution_amount: "1000000",
+      round_duration_ms: 60000,
+      total_members: 2,
+      token_id: "usdc.near"
+    });
+
+    contract.setCaller("bob.near", 0n);
+    contract.joinCircle({ circle_id });
+
+    contract.setCaller("carol.near", 0n);
+    assert.throws(() => contract.joinCircle({ circle_id }), /Circle is already full/);
+  });
+
+  it("25. [Stablecoin] applyDeposit rejects FT transfers to NEAR circles and wrong stablecoin tokens", () => {
+    const contract = new OrbitContractHarness();
+    contract.setCaller("alice.near", ONE_NEAR);
+    const nearCircleId = contract.createCircle({
+      name: "NEAR Circle",
+      contribution_amount: ONE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+    contract.setCaller("bob.near", ONE_NEAR);
+    contract.joinCircle({ circle_id: nearCircleId });
+
+    contract.setCaller("usdc.near", 1n);
+    assert.throws(
+      () => contract.ftOnTransfer({ sender_id: "alice.near", amount: ONE_NEAR.toString(), msg: `deposit:${nearCircleId}` }),
+      /This circle settles in NEAR/
+    );
+
+    contract.setCaller("alice.near", 0n);
+    const usdcCircleId = contract.createCircle({
+      name: "USDC Circle",
+      contribution_amount: "1000000",
+      round_duration_ms: 60000,
+      total_members: 2,
+      token_id: "usdc.near"
+    });
+    contract.setCaller("bob.near", 0n);
+    contract.joinCircle({ circle_id: usdcCircleId });
+
+    contract.setCaller("usdc.near", 1n);
+    contract.ftOnTransfer({ sender_id: "alice.near", amount: "1000000", msg: `collateral:${usdcCircleId}` });
+    contract.ftOnTransfer({ sender_id: "bob.near", amount: "1000000", msg: `collateral:${usdcCircleId}` });
+
+    contract.setCaller("fake-token.near", 1n);
+    assert.throws(
+      () => contract.ftOnTransfer({ sender_id: "alice.near", amount: "1000000", msg: `deposit:${usdcCircleId}` }),
+      /Token is not the circle stablecoin/
+    );
+  });
+
+  it("26. [Stablecoin] ft_on_transfer rejects malformed msg payloads and zero collateral", () => {
+    const contract = new OrbitContractHarness();
+    contract.setCaller("alice.near", 0n);
+    const circle_id = contract.createCircle({
+      name: "Malformed FT",
+      contribution_amount: "1000000",
+      round_duration_ms: 60000,
+      total_members: 2,
+      token_id: "usdc.near"
+    });
+    contract.setCaller("bob.near", 0n);
+    contract.joinCircle({ circle_id });
+
+    contract.setCaller("usdc.near", 1n);
+    assert.throws(
+      () => contract.ftOnTransfer({ sender_id: "alice.near", amount: "0", msg: `collateral:${circle_id}` }),
+      /Collateral amount must be positive/
+    );
+
+    contract.ftOnTransfer({ sender_id: "alice.near", amount: "1000000", msg: `collateral:${circle_id}` });
+    contract.ftOnTransfer({ sender_id: "bob.near", amount: "1000000", msg: `collateral:${circle_id}` });
+
+    assert.throws(
+      () => contract.ftOnTransfer({ sender_id: "alice.near", amount: "1000000", msg: `deposit:${circle_id}:extra` })
+    );
+  });
+
+  it("27. [Keeper] Terminated default preserves zero marginal slash and stops keeper loop cleanly", async () => {
+    const contract = new OrbitContractHarness();
+    const TWO_NEAR = 2n * ONE_NEAR;
+
+    contract.setCaller("alice.near", TWO_NEAR);
+    const circle_id = contract.createCircle({
+      name: "Exhaustion Guard",
+      contribution_amount: ONE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 3
+    });
+    contract.setCaller("bob.near", TWO_NEAR);
+    contract.joinCircle({ circle_id });
+    contract.setCaller("carol.near", TWO_NEAR);
+    contract.joinCircle({ circle_id });
+
+    // Round 1: bob pays; alice and carol miss. Simulate depleted collateral for alice
+    // to exercise the defensive !coverDefault -> Terminated path across multiple unpaid members.
+    contract.setCaller("bob.near", ONE_NEAR);
+    contract.deposit({ circle_id });
+    contract.advanceTime(70000);
+    contract.storage.set(`col:${circle_id}:alice.near`, new TextEncoder().encode("0"));
+
+    const keeper = new OrbitKeeperAgent(contract, "keeper.near");
+    await keeper.runPollCycle();
+
+    assert.equal(contract.getCircle({ circle_id }).status, CircleStatus.Terminated);
+    const aliceRep = contract.getReputationProfile({ account_id: "alice.near" });
+    assert.equal(aliceRep.collateral_slashed_total, 0n);
+    assert.equal(aliceRep.reputation_score, 350);
+  });
+
+  it("28. [Parser] JSON extraction ignores nested keys and non-string values and rejects i64 wraparound", () => {
+    const contract = new OrbitContractHarness();
+    contract.setCaller("alice.near", ONE_NEAR);
+
+    const nestedCircleId = contract._invoke("create_circle", {
+      meta: { name: "ShadowedName", token_id: "shadow.near" },
+      credit: 0,
+      name: "TopLevel",
+      contribution_amount: ONE_NEAR.toString(),
+      round_duration_ms: 60000,
+      total_members: 2
+    });
+    const created = contract.getCircle({ circle_id: nestedCircleId });
+    assert.equal(created.name, "TopLevel");
+    assert.equal(created.token_id, "");
+
+    assert.throws(
+      () => contract._invoke("create_circle", {
+        name: 12345,
+        contribution_amount: ONE_NEAR.toString(),
+        round_duration_ms: 60000,
+        total_members: 2
+      }),
+      /Circle name must be 2-64/
+    );
+
+    assert.throws(
+      () => contract._invoke("create_circle", {
+        name: "Wrap Test",
+        contribution_amount: ONE_NEAR.toString(),
+        round_duration_ms: 60000,
+        total_members: 4294967298
+      }),
+      /between 2 and 20 members/
+    );
+
+    assert.deepEqual(contract.getCircles({ from_index: 2147483647, limit: 10 }), []);
+  });
+
 });
